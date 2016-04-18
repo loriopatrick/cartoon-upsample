@@ -1,0 +1,7 @@
+[package]
+name = "cartoon-upsample"
+version = "0.1.0"
+authors = ["Patrick Lorio"]
+
+[dependencies]
+image = "0.9.0"
