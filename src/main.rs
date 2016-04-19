@@ -1,6 +1,7 @@
 extern crate image;
 
 mod quadtree;
+mod shape_finder;
 
 use std::path::Path;
 

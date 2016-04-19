@@ -4,7 +4,6 @@ use image::RgbImage;
 use image::GenericImage;
 use image::Rgb;
 
-#[derive(Debug)]
 pub struct Region {
     x: u32,
     y:u32,
@@ -12,14 +11,48 @@ pub struct Region {
     height: u32,
 }
 
-#[derive(Debug)]
+pub enum Pos {
+    TOP,
+    TL,
+    TR,
+    BL,
+    BR
+}
+
 pub struct QuadTree {
     region: Region,
     is_leaf: bool,
-    tl: Option<Box<QuadTree>>,
-    tr: Option<Box<QuadTree>>,
-    bl: Option<Box<QuadTree>>,
-    br: Option<Box<QuadTree>>,
+    color: Rgb<u8>,
+    variance: f64,
+    flag: u64,
+    parent: *mut QuadTree,
+    pos: Pos,
+    tl: *mut QuadTree,
+    tr: *mut QuadTree,
+    bl: *mut QuadTree,
+    br: *mut QuadTree,
+}
+
+pub fn left(tree: &mut QuadTree) -> Option<*mut QuadTree> {
+    unsafe {
+        match tree.pos {
+            Pos::TOP => return None,
+            Pos::TR => return Some((*tree.parent).tl),
+            Pos::BR => return Some((*tree.parent).bl),
+            Pos::TL => {
+                match left(&mut *tree.parent) {
+                    None => return None,
+                    Some(x) => {
+                        if (*x).is_leaf {
+                            return Some(x);
+                        }
+                        return Some((*x).tr);
+                    }
+                }
+            }
+            _ => panic!("bad"),
+        }
+    }
 }
 
 pub fn build_tree(img: &mut RgbImage, thres: f64) -> Box<QuadTree> {
@@ -29,14 +62,15 @@ pub fn build_tree(img: &mut RgbImage, thres: f64) -> Box<QuadTree> {
         y: 0,
         width: width,
         height: height,
-    });
+    }, Pos::TOP, 0 as *mut QuadTree);
+
     divide_tree(&mut tree, img, thres);
     return tree;
 }
 
 fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
     let xi = tree.region.x;
-    let xf = tree.region.x+tree.region.width;
+    let xf = tree.region.x + tree.region.width;
 
     let yi = tree.region.y;
     let yf = tree.region.y+tree.region.height;
@@ -70,45 +104,50 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
         }
     }
 
+    tree.color = avg;
+    tree.variance = var;
+
     if var > thres {
         let w2 = tree.region.width / 2;
         let h2 = tree.region.height / 2;
+
+        let parent = tree as *mut QuadTree;
 
         let mut tl = tree_region(Region{
             x: xi,
             y: yi,
             width: w2,
             height: h2,
-        });
+        }, Pos::TL, parent);
         divide_tree(&mut tl, img, thres);
-        tree.tl = Some(tl);
+        tree.tl = Box::into_raw(tl);
 
         let mut tr = tree_region(Region{
             x: xi + w2,
             y: yi,
             width: w2,
             height: h2,
-        });
+        }, Pos::TR, parent);
         divide_tree(&mut tr, img, thres);
-        tree.tr = Some(tr);
+        tree.tr = Box::into_raw(tr);
 
         let mut bl = tree_region(Region{
             x: xi,
             y: yi + h2,
             width: w2,
             height: h2,
-        });
+        }, Pos::BL, parent);
         divide_tree(&mut bl, img, thres);
-        tree.bl = Some(bl);
+        tree.bl = Box::into_raw(bl);
 
         let mut br = tree_region(Region{
             x: xi + w2,
             y: yi + h2,
             width: w2,
             height: h2,
-        });
+        }, Pos::BR, parent);
         divide_tree(&mut br, img, thres);
-        tree.br = Some(br);
+        tree.br = Box::into_raw(br);
 
         tree.is_leaf = false;
     }
@@ -119,13 +158,18 @@ fn pow2_diff<T:Into<f64>, U:Into<f64>>(a: T, b: U) -> f64 {
     return num * num;
 }
 
-fn tree_region(region: Region) -> Box<QuadTree> {
+fn tree_region(region: Region, pos: Pos, parent: *mut QuadTree) -> Box<QuadTree> {
     return Box::new(QuadTree{
         region: region,
         is_leaf: true,
-        tl: None,
-        tr: None,
-        bl: None,
-        br: None,
+        color: Rgb{ data: [0 as u8, 0 as u8, 0 as u8] },
+        variance: 0.0,
+        parent: parent,
+        flag: 0,
+        pos: pos,
+        tl: 0 as *mut QuadTree,
+        tr: 0 as *mut QuadTree,
+        bl: 0 as *mut QuadTree,
+        br: 0 as *mut QuadTree,
     });
 }
