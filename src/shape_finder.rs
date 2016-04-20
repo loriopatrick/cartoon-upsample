@@ -1,7 +1,7 @@
 extern crate image;
 
 use image::Rgb;
-use quadtree::{QuadTree, Region};
+use quadtree::{QuadTree, Point};
 
 pub fn take_shape(tree: &mut Box<QuadTree>) -> Option<Vec<Box<QuadTree>>> {
     let mut leaf = take_leaf(&mut tree.tl);
@@ -29,11 +29,6 @@ pub fn take_shape(tree: &mut Box<QuadTree>) -> Option<Vec<Box<QuadTree>>> {
     parts.push(leaf_val);
 
     return Some(parts);
-}
-
-struct Point {
-    x: u32,
-    y: u32,
 }
 
 fn collect_parts(tree: &mut Option<Box<QuadTree>>, last_part: &Box<QuadTree>, parts: &mut Vec<Box<QuadTree>>) {
@@ -97,13 +92,6 @@ fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
     }
 
     return cursor.take();
-}
-
-impl Region {
-    fn contains(&self, p: &Point) -> bool {
-        return self.x <= p.x && self.y <= p.y &&
-            self.x + self.width >= p.x && self.y + self.height >= p.y;
-    }
 }
 
 fn take_by_edge(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeFn) -> Option<Box<QuadTree>> {
