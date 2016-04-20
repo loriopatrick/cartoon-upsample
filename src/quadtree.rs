@@ -3,6 +3,7 @@ extern crate image;
 use image::RgbImage;
 use image::GenericImage;
 use image::Rgb;
+use std::ptr;
 
 pub struct Region {
     x: u32,
@@ -20,39 +21,17 @@ pub enum Pos {
 }
 
 pub struct QuadTree {
-    region: Region,
-    is_leaf: bool,
-    color: Rgb<u8>,
-    variance: f64,
-    flag: u64,
-    parent: *mut QuadTree,
-    pos: Pos,
-    tl: *mut QuadTree,
-    tr: *mut QuadTree,
-    bl: *mut QuadTree,
-    br: *mut QuadTree,
-}
-
-pub fn left(tree: &mut QuadTree) -> Option<*mut QuadTree> {
-    unsafe {
-        match tree.pos {
-            Pos::TOP => return None,
-            Pos::TR => return Some((*tree.parent).tl),
-            Pos::BR => return Some((*tree.parent).bl),
-            Pos::TL => {
-                match left(&mut *tree.parent) {
-                    None => return None,
-                    Some(x) => {
-                        if (*x).is_leaf {
-                            return Some(x);
-                        }
-                        return Some((*x).tr);
-                    }
-                }
-            }
-            _ => panic!("bad"),
-        }
-    }
+    pub region: Region,
+    pub is_leaf: bool,
+    pub color: Rgb<u8>,
+    pub variance: f64,
+    pub flag: u64,
+    pub parent: *mut QuadTree,
+    pub pos: Pos,
+    pub tl: Option<Box<QuadTree>>,
+    pub tr: Option<Box<QuadTree>>,
+    pub bl: Option<Box<QuadTree>>,
+    pub br: Option<Box<QuadTree>>,
 }
 
 pub fn build_tree(img: &mut RgbImage, thres: f64) -> Box<QuadTree> {
@@ -120,7 +99,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             height: h2,
         }, Pos::TL, parent);
         divide_tree(&mut tl, img, thres);
-        tree.tl = Box::into_raw(tl);
+        tree.tl = Some(tl);
 
         let mut tr = tree_region(Region{
             x: xi + w2,
@@ -129,7 +108,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             height: h2,
         }, Pos::TR, parent);
         divide_tree(&mut tr, img, thres);
-        tree.tr = Box::into_raw(tr);
+        tree.tr = Some(tr);
 
         let mut bl = tree_region(Region{
             x: xi,
@@ -138,7 +117,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             height: h2,
         }, Pos::BL, parent);
         divide_tree(&mut bl, img, thres);
-        tree.bl = Box::into_raw(bl);
+        tree.bl = Some(bl);
 
         let mut br = tree_region(Region{
             x: xi + w2,
@@ -147,7 +126,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             height: h2,
         }, Pos::BR, parent);
         divide_tree(&mut br, img, thres);
-        tree.br = Box::into_raw(br);
+        tree.br = Some(br);
 
         tree.is_leaf = false;
     }
@@ -167,9 +146,9 @@ fn tree_region(region: Region, pos: Pos, parent: *mut QuadTree) -> Box<QuadTree>
         parent: parent,
         flag: 0,
         pos: pos,
-        tl: 0 as *mut QuadTree,
-        tr: 0 as *mut QuadTree,
-        bl: 0 as *mut QuadTree,
-        br: 0 as *mut QuadTree,
+        tl: None,
+        tr: None,
+        bl: None,
+        br: None,
     });
 }
