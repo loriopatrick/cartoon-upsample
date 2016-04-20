@@ -3,22 +3,21 @@ extern crate image;
 use image::RgbImage;
 use image::GenericImage;
 use image::Rgb;
-use std::ptr;
 
 pub struct Region {
-    x: u32,
-    y:u32,
-    width: u32,
-    height: u32,
+    pub x: u32,
+    pub y: u32,
+    pub width: u32,
+    pub height: u32,
 }
 
-pub enum Pos {
-    TOP,
-    TL,
-    TR,
-    BL,
-    BR
-}
+pub type Pos = u8;
+
+pub const TOP: Pos = 1;
+pub const TL: Pos = 2;
+pub const TR: Pos = 3;
+pub const BL: Pos = 4;
+pub const BR: Pos = 5;
 
 pub struct QuadTree {
     pub region: Region,
@@ -34,17 +33,19 @@ pub struct QuadTree {
     pub br: Option<Box<QuadTree>>,
 }
 
-pub fn build_tree(img: &mut RgbImage, thres: f64) -> Box<QuadTree> {
-    let (width, height) = img.dimensions();
-    let mut tree = tree_region(Region{
-        x: 0,
-        y: 0,
-        width: width,
-        height: height,
-    }, Pos::TOP, 0 as *mut QuadTree);
+impl QuadTree {
+    pub fn build(img: &mut RgbImage, thres: f64) -> Box<QuadTree> {
+        let (width, height) = img.dimensions();
+        let mut tree = tree_region(Region{
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+        }, TOP, 0 as *mut QuadTree);
 
-    divide_tree(&mut tree, img, thres);
-    return tree;
+        divide_tree(&mut tree, img, thres);
+        return tree;
+    }
 }
 
 fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
@@ -97,7 +98,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             y: yi,
             width: w2,
             height: h2,
-        }, Pos::TL, parent);
+        }, TL, parent);
         divide_tree(&mut tl, img, thres);
         tree.tl = Some(tl);
 
@@ -106,7 +107,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             y: yi,
             width: w2,
             height: h2,
-        }, Pos::TR, parent);
+        }, TR, parent);
         divide_tree(&mut tr, img, thres);
         tree.tr = Some(tr);
 
@@ -115,7 +116,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             y: yi + h2,
             width: w2,
             height: h2,
-        }, Pos::BL, parent);
+        }, BL, parent);
         divide_tree(&mut bl, img, thres);
         tree.bl = Some(bl);
 
@@ -124,7 +125,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             y: yi + h2,
             width: w2,
             height: h2,
-        }, Pos::BR, parent);
+        }, BR, parent);
         divide_tree(&mut br, img, thres);
         tree.br = Some(br);
 
