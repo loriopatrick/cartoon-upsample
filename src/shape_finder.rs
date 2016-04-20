@@ -3,16 +3,6 @@ extern crate image;
 use image::Rgb;
 use quadtree::{QuadTree, Region};
 
-#[derive(PartialEq)]
-struct Point {
-    x: u32,
-    y: u32,
-}
-
-type Edge<'a> = (&'a Point, &'a Point);
-
-pub type TakeFn = Fn(&Box<QuadTree>) -> bool;
-
 pub fn take_shape(tree: &mut Box<QuadTree>) -> Option<Vec<Box<QuadTree>>> {
     let mut leaf = take_leaf(&mut tree.tl);
     if leaf.is_none() {
@@ -41,6 +31,11 @@ pub fn take_shape(tree: &mut Box<QuadTree>) -> Option<Vec<Box<QuadTree>>> {
     return Some(parts);
 }
 
+struct Point {
+    x: u32,
+    y: u32,
+}
+
 fn collect_parts(tree: &mut Option<Box<QuadTree>>, last_part: &Box<QuadTree>, parts: &mut Vec<Box<QuadTree>>) {
     if tree.is_none() {
         return
@@ -67,8 +62,11 @@ fn collect_parts(tree: &mut Option<Box<QuadTree>>, last_part: &Box<QuadTree>, pa
     collect_parts_by_edge(tree, &do_take, &(p3, p1), parts);
 }
 
+type TakeFn = Fn(&Box<QuadTree>) -> bool;
+type Edge<'a> = (&'a Point, &'a Point);
+
 fn collect_parts_by_edge(tree: &mut Option<Box<QuadTree>>, do_take: &TakeFn, edge: &Edge, parts: &mut Vec<Box<QuadTree>>) {
-    match take(tree, edge, do_take) {
+    match take_by_edge(tree, edge, do_take) {
         Some(x) => {
             collect_parts(tree, &x, parts);
             parts.push(x);
@@ -108,8 +106,7 @@ impl Region {
     }
 }
 
-
-fn take(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeFn) -> Option<Box<QuadTree>> {
+fn take_by_edge(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeFn) -> Option<Box<QuadTree>> {
     if cursor.is_none() {
         return None;
     }
@@ -119,13 +116,13 @@ fn take(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeFn) -> Op
 
         if !tree.is_leaf {
             if tree.region.contains(&edge.0) || tree.region.contains(&edge.1) {
-                let mut res = take(&mut tree.tl, edge, do_take);
+                let mut res = take_by_edge(&mut tree.tl, edge, do_take);
                 if res.is_some() { return res; }
-                res = take(&mut tree.tr, edge, do_take);
+                res = take_by_edge(&mut tree.tr, edge, do_take);
                 if res.is_some() { return res; }
-                res = take(&mut tree.bl, edge, do_take);
+                res = take_by_edge(&mut tree.bl, edge, do_take);
                 if res.is_some() { return res; }
-                res = take(&mut tree.br, edge, do_take);
+                res = take_by_edge(&mut tree.br, edge, do_take);
                 if res.is_some() { return res; }
             }
             return None;
