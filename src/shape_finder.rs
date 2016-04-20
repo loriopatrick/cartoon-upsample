@@ -57,17 +57,17 @@ fn collect_parts(tree: &mut Option<Box<QuadTree>>, last_part: &Box<QuadTree>, pa
     };
 
     let color = last_part.color;
-    let mut do_take = move |option: &Box<QuadTree>| {
+    let do_take = move |option: &Box<QuadTree>| {
         return color_diff(color, option.color) < 100.0;
     };
 
-    collect_parts_by_edge(tree, last_part, &do_take, &(p1, p2), parts);
-    collect_parts_by_edge(tree, last_part, &do_take, &(p2, p3), parts);
-    collect_parts_by_edge(tree, last_part, &do_take, &(p3, p4), parts);
-    collect_parts_by_edge(tree, last_part, &do_take, &(p3, p1), parts);
+    collect_parts_by_edge(tree, &do_take, &(p1, p2), parts);
+    collect_parts_by_edge(tree, &do_take, &(p2, p3), parts);
+    collect_parts_by_edge(tree, &do_take, &(p3, p4), parts);
+    collect_parts_by_edge(tree, &do_take, &(p3, p1), parts);
 }
 
-fn collect_parts_by_edge(tree: &mut Option<Box<QuadTree>>, last_part: &Box<QuadTree>, do_take: &TakeFn, edge: &Edge, parts: &mut Vec<Box<QuadTree>>) {
+fn collect_parts_by_edge(tree: &mut Option<Box<QuadTree>>, do_take: &TakeFn, edge: &Edge, parts: &mut Vec<Box<QuadTree>>) {
     match take(tree, edge, do_take) {
         Some(x) => {
             collect_parts(tree, &x, parts);
