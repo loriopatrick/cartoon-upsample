@@ -12,6 +12,7 @@ pub const TR: Pos = 3;
 pub const BL: Pos = 4;
 pub const BR: Pos = 5;
 
+#[derive(Debug)]
 pub struct Region {
     pub x: u32,
     pub y: u32,
@@ -46,7 +47,7 @@ pub struct QuadTree {
 }
 
 impl QuadTree {
-    pub fn build(img: &mut RgbImage, thres: f64) -> Box<QuadTree> {
+    pub fn build(img: &RgbImage, thres: f64) -> Box<QuadTree> {
         let (width, height) = img.dimensions();
         let mut tree = tree_region(Region{
             x: 0,
@@ -60,7 +61,7 @@ impl QuadTree {
     }
 }
 
-fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
+fn divide_tree(tree: &mut QuadTree, img: &RgbImage, thres: f64) {
     let xi = tree.region.x;
     let xf = tree.region.x + tree.region.width;
 
@@ -76,8 +77,8 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
         for y in yi..yf {
             let pixel = img.get_pixel(x, y);
             sum[0] += pixel[0] as f64;
-            sum[1] += pixel[0] as f64;
-            sum[2] += pixel[0] as f64;
+            sum[1] += pixel[1] as f64;
+            sum[2] += pixel[2] as f64;
         }
     }
 
@@ -96,10 +97,13 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
         }
     }
 
+    var /= (items * 4.0);
+
     tree.color = avg;
     tree.variance = var;
+    tree.is_leaf == true;
 
-    if var > thres {
+    if var > thres && tree.region.width > 1 && tree.region.height > 1 {
         let w2 = tree.region.width / 2;
         let h2 = tree.region.height / 2;
 
@@ -117,7 +121,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
         let mut tr = tree_region(Region{
             x: xi + w2,
             y: yi,
-            width: w2,
+            width: xf - (xi + w2),
             height: h2,
         }, TR, parent);
         divide_tree(&mut tr, img, thres);
@@ -127,7 +131,7 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
             x: xi,
             y: yi + h2,
             width: w2,
-            height: h2,
+            height: yf - (yi + h2),
         }, BL, parent);
         divide_tree(&mut bl, img, thres);
         tree.bl = Some(bl);
@@ -135,8 +139,8 @@ fn divide_tree(tree: &mut QuadTree, img: &mut RgbImage, thres: f64) {
         let mut br = tree_region(Region{
             x: xi + w2,
             y: yi + h2,
-            width: w2,
-            height: h2,
+            width: xf - (xi + w2),
+            height: yf - (yi + h2),
         }, BR, parent);
         divide_tree(&mut br, img, thres);
         tree.br = Some(br);

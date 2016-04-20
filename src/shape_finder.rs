@@ -70,7 +70,7 @@ fn collect_parts_by_edge(tree: &mut Option<Box<QuadTree>>, do_take: &TakeFn, edg
     }
 }
 
-fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
+pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
     if cursor.is_none() {
         return None;
     }
