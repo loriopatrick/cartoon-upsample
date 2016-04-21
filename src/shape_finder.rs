@@ -55,10 +55,12 @@ fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>) -> Shape {
     while edges.len() > 0 {
         let (edge, src_color) = edges.pop().unwrap();
 
+        let avg_area = area / parts.len() as f64;
         let do_take = move |option: &Box<QuadTree>| {
             let step = color_diff(src_color, option.color);
             let diff = color_diff(avg_color, option.color);
-            return diff < 50.0 && step < 20.0;
+            let area = option.region.area();
+            return diff < 60.0 && step < 40.0 && area > avg_area / 2.0|| area < 3.0 && avg_area < 5.0 && step < 50.0;
         };
 
         match take_by_edge(tree, &edge, &do_take) {
