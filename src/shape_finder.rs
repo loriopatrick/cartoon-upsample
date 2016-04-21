@@ -3,13 +3,13 @@ extern crate image;
 use image::Rgb;
 use quadtree::{QuadTree, Point};
 
-pub fn take_shapes(tree: Box<QuadTree>) -> Vec<Vec<Box<QuadTree>>> {
-    let mut tree_root = Some(tree);
-
+pub fn take_shapes(mut tree: Box<QuadTree>) -> Vec<Vec<Box<QuadTree>>> {
     let mut shapes = Vec::new();
+    let mut option = Some(tree);
+
     while true {
         let leaf = {
-            let tree = tree_root.as_mut().unwrap();
+            let mut tree = option.as_mut().unwrap();
             let mut leaf = take_leaf(&mut tree.tl);
 
             if leaf.is_none() {
@@ -29,81 +29,54 @@ pub fn take_shapes(tree: Box<QuadTree>) -> Vec<Vec<Box<QuadTree>>> {
             leaf
         };
 
-        let mut parts: Vec<Box<QuadTree>> = Vec::new();
         let leaf_val = leaf.unwrap();
-        collect_parts(&mut tree_root, &leaf_val, &leaf_val, &mut parts);
-        parts.push(leaf_val);
-        shapes.push(parts);
+        shapes.push(collect_parts(&mut option, leaf_val));
     }
 
     return shapes;
 }
 
-fn collect_parts(tree: &mut Option<Box<QuadTree>>, first_part: &Box<QuadTree>, last_part: &Box<QuadTree>, parts: &mut Vec<Box<QuadTree>>) {
-    if tree.is_none() {
-        return
+fn collect_parts(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>) -> Vec<Box<QuadTree>> {
+    let color = start.color;
+    let do_take = move |option: &Box<QuadTree>| {
+        return color_diff(color, option.color) < 100.0;
+    };
+
+    let mut edges = Vec::new();
+    let mut parts = Vec::new();
+
+    add_edges(&start, &mut edges);
+    parts.push(start);
+
+    while edges.len() > 0 {
+        let edge = edges.pop().unwrap();
+        match take_by_edge(tree, &edge, &do_take) {
+            Some(add) => {
+                add_edges(&add, &mut edges);
+                parts.push(add);
+            },
+            None => continue
+        }
     }
 
-    let (tl, tr, bl, br) = {
-        let r = last_part.region;
-        (
-            Point{x:r.x, y:r.y},
-            Point{x:r.x+r.width, y:r.y},
-            Point{x:r.x, y:r.y+r.height},
-            Point{x:r.x+r.width, y:r.y+r.height},
-        )
-    };
+    return parts;
+}
 
-    let color = first_part.color;
-    let region = last_part.region;
-    let last_color = last_part.color;
-    let do_take = move |option: &Box<QuadTree>| {
-        return color_diff(color, option.color) < 100.0 ||
-            region.area() + option.region.area() < 10.0 && color_diff(last_color, option.color) < 100.0;
-    };
+fn add_edges(tree: &Box<QuadTree>, edges: &mut Vec<Edge>) {
+    let r = tree.region;
+    let tl = Point{x:r.x, y:r.y};
+    let tr = Point{x:r.x+r.width, y:r.y};
+    let bl = Point{x:r.x, y:r.y+r.height};
+    let br = Point{x:r.x+r.width, y:r.y+r.height};
 
-    collect_parts_by_edge(tree, first_part, &do_take, &(tl, tr), parts);
-    collect_parts_by_edge(tree, first_part, &do_take, &(tr, br), parts);
-    collect_parts_by_edge(tree, first_part, &do_take, &(br, bl), parts);
-    collect_parts_by_edge(tree, first_part, &do_take, &(bl, tl), parts);
+    edges.push((tl, tr));
+    edges.push((tr, br));
+    edges.push((br, bl));
+    edges.push((bl, tl));
 }
 
 type TakeFn = Fn(&Box<QuadTree>) -> bool;
 type Edge = (Point, Point);
-
-fn collect_parts_by_edge(tree: &mut Option<Box<QuadTree>>, first_part: &Box<QuadTree>, do_take: &TakeFn, edge: &Edge, parts: &mut Vec<Box<QuadTree>>) {
-    match take_by_edge(tree, edge, do_take) {
-        Some(x) => {
-            collect_parts(tree, first_part, &x, parts);
-            parts.push(x);
-        },
-        _ => return,
-    }
-}
-
-pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
-    if cursor.is_none() {
-        return None;
-    }
-
-    {
-        let mut tree = cursor.as_mut().unwrap();
-
-        if !tree.is_leaf {
-            let mut res = take_leaf(&mut tree.tl);
-            if res.is_some() { return res; }
-            res = take_leaf(&mut tree.tr);
-            if res.is_some() { return res; }
-            res = take_leaf(&mut tree.bl);
-            if res.is_some() { return res; }
-            res = take_leaf(&mut tree.br);
-            if res.is_some() { return res; }
-            return None;
-        }
-    }
-
-    return cursor.take();
-}
 
 fn take_by_edge(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeFn) -> Option<Box<QuadTree>> {
     if cursor.is_none() {
@@ -146,6 +119,30 @@ fn take_by_edge(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeF
         }
 
         if !do_take(tree) {
+            return None;
+        }
+    }
+
+    return cursor.take();
+}
+
+pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
+    if cursor.is_none() {
+        return None;
+    }
+
+    {
+        let mut tree = cursor.as_mut().unwrap();
+
+        if !tree.is_leaf {
+            let mut res = take_leaf(&mut tree.tl);
+            if res.is_some() { return res; }
+            res = take_leaf(&mut tree.tr);
+            if res.is_some() { return res; }
+            res = take_leaf(&mut tree.bl);
+            if res.is_some() { return res; }
+            res = take_leaf(&mut tree.br);
+            if res.is_some() { return res; }
             return None;
         }
     }
