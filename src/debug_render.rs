@@ -1,5 +1,7 @@
+extern crate rand;
 extern crate image;
 
+use self::rand::Rng;
 use image::{
     Rgb,
     RgbImage,
@@ -25,10 +27,31 @@ pub fn render_quadtree_lines(base: &RgbImage, tree: &Box<QuadTree>) -> RgbImage 
 pub fn render_quadtree(tree: &Box<QuadTree>) -> RgbImage {
     return ImageBuffer::from_fn(tree.region.width, tree.region.height, |x, y| {
         match get_tree(&Point{x: x, y: y}, tree) {
-            None => Rgb([0 as u8, 0 as u8, 0 as u8]),
+            None => Rgb([0 as u8; 3]),
             Some(x) => x.color,
         }
     });
+}
+
+pub fn render_shapes(width: u32, height: u32, shapes: &Vec<Vec<Box<QuadTree>>>) -> RgbImage {
+    let mut img = ImageBuffer::new(width, height);
+    let mut rng = rand::thread_rng();
+    for shape in shapes {
+        let mut _color = [0 as u8; 3];
+        rng.fill_bytes(&mut _color);
+        let color = Rgb(_color);
+
+        //let color = shape[0].color;
+
+        for item in shape {
+            for x in item.region.x..item.region.x+item.region.width {
+                for y in item.region.y..item.region.y+item.region.height {
+                    img.put_pixel(x, y, color);
+                }
+            }
+        }
+    }
+    return img;
 }
 
 fn get_tree<'a>(p: &Point, root: &'a Box<QuadTree>) -> Option<&'a Box<QuadTree>> {

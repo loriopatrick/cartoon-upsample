@@ -12,7 +12,7 @@ pub const TR: Pos = 3;
 pub const BL: Pos = 4;
 pub const BR: Pos = 5;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Region {
     pub x: u32,
     pub y: u32,
@@ -20,6 +20,7 @@ pub struct Region {
     pub height: u32,
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Point {
     pub x: u32,
     pub y: u32,
@@ -29,6 +30,10 @@ impl Region {
     pub fn contains(&self, p: &Point) -> bool {
         return self.x <= p.x && self.y <= p.y &&
             self.x + self.width >= p.x && self.y + self.height >= p.y;
+    }
+
+    pub fn area(&self) -> f64 {
+        return self.width as f64 * self.height as f64;
     }
 }
 
@@ -97,7 +102,7 @@ fn divide_tree(tree: &mut QuadTree, img: &RgbImage, thres: f64) {
         }
     }
 
-    var /= (items * 4.0);
+    var /= items * 4.0;
 
     tree.color = avg;
     tree.variance = var;
