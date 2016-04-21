@@ -96,13 +96,11 @@ fn divide_tree(tree: &mut QuadTree, img: &RgbImage, thres: f64) {
     for x in xi..xf {
         for y in yi..yf {
             let pixel = img.get_pixel(x, y);
-            var += pow2_diff(avg[0], pixel[0]);
-            var += pow2_diff(avg[1], pixel[1]);
-            var += pow2_diff(avg[2], pixel[2]);
+            var += color_diff(&avg, pixel);
         }
     }
 
-    var /= items * 4.0;
+    var /= items;
 
     tree.color = avg;
     tree.variance = var;
@@ -173,4 +171,13 @@ fn tree_region(region: Region, pos: Pos, parent: *mut QuadTree) -> Box<QuadTree>
         bl: None,
         br: None,
     });
+}
+
+fn color_diff(a: &Rgb<u8>, b: &Rgb<u8>) -> f64 {
+    // Source: http://www.compuphase.com/cmetric.htm
+    let rmean = (a[0] as i64 + b[0] as i64) / 2;
+    let r = a[0] as i64 - b[0] as i64;
+    let g = a[1] as i64 - b[1] as i64;
+    let b = a[2] as i64 - b[2] as i64;
+    return f64::sqrt(((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8)) as f64);
 }

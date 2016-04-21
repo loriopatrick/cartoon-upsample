@@ -8,10 +8,10 @@ use std::path::Path;
 use quadtree::QuadTree;
 
 fn main() {
-    let src = image::open(&Path::new("images/southpark.jpg")).unwrap().to_rgb();
-    let im = image::imageops::resize(&src, 1025, 1024, image::FilterType::Nearest);
+    let src = image::open(&Path::new("images/southpark5.png")).unwrap().to_rgb();
+    let im = image::imageops::resize(&src, 1024, 1024, image::FilterType::Nearest);
 
-    let tree = QuadTree::build(&im, 10.0);
+    let tree = QuadTree::build(&im, 5.0);
 
     let redraw = debug_render::render_quadtree(&tree);
     let lines = debug_render::render_quadtree_lines(&im, &tree);

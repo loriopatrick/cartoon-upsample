@@ -3,7 +3,13 @@ extern crate image;
 use image::Rgb;
 use quadtree::{QuadTree, Point};
 
-pub fn take_shapes(mut tree: Box<QuadTree>) -> Vec<Vec<Box<QuadTree>>> {
+pub struct Shape {
+    pub color: Rgb<u8>,
+    pub parts: Vec<Box<QuadTree>>,
+    pub area: f64,
+}
+
+pub fn take_shapes(mut tree: Box<QuadTree>) -> Vec<Shape> {
     let mut shapes = Vec::new();
     let mut option = Some(tree);
 
@@ -30,49 +36,66 @@ pub fn take_shapes(mut tree: Box<QuadTree>) -> Vec<Vec<Box<QuadTree>>> {
         };
 
         let leaf_val = leaf.unwrap();
-        shapes.push(collect_parts(&mut option, leaf_val));
+        shapes.push(find_shape(&mut option, leaf_val));
     }
 
     return shapes;
 }
 
-fn collect_parts(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>) -> Vec<Box<QuadTree>> {
-    let color = start.color;
-    let do_take = move |option: &Box<QuadTree>| {
-        return color_diff(color, option.color) < 100.0;
-    };
-
+fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>) -> Shape {
     let mut edges = Vec::new();
     let mut parts = Vec::new();
+
+    let mut avg_color = start.color;
+    let mut area = start.region.area();
 
     add_edges(&start, &mut edges);
     parts.push(start);
 
     while edges.len() > 0 {
-        let edge = edges.pop().unwrap();
+        let (edge, src_color) = edges.pop().unwrap();
+
+        let do_take = move |option: &Box<QuadTree>| {
+            let step = color_diff(src_color, option.color);
+            let diff = color_diff(avg_color, option.color);
+            return diff < 50.0 && step < 20.0;
+        };
+
         match take_by_edge(tree, &edge, &do_take) {
-            Some(add) => {
-                add_edges(&add, &mut edges);
-                parts.push(add);
+            Some(part) => {
+                add_edges(&part, &mut edges);
+                let part_area = part.region.area();
+                let new_area = area + part_area;
+                avg_color = Rgb([
+                    ((avg_color[0] as f64 * area + part.color[0] as f64 * part_area) / new_area) as u8,
+                    ((avg_color[1] as f64 * area + part.color[1] as f64 * part_area) / new_area) as u8,
+                    ((avg_color[2] as f64 * area + part.color[2] as f64 * part_area) / new_area) as u8
+                ]);
+                area = new_area;
+                parts.push(part);
             },
             None => continue
         }
     }
 
-    return parts;
+    return Shape{
+        parts: parts,
+        area: area,
+        color: avg_color,
+    };
 }
 
-fn add_edges(tree: &Box<QuadTree>, edges: &mut Vec<Edge>) {
+fn add_edges(tree: &Box<QuadTree>, edges: &mut Vec<(Edge, Rgb<u8>)>) {
     let r = tree.region;
     let tl = Point{x:r.x, y:r.y};
     let tr = Point{x:r.x+r.width, y:r.y};
     let bl = Point{x:r.x, y:r.y+r.height};
     let br = Point{x:r.x+r.width, y:r.y+r.height};
 
-    edges.push((tl, tr));
-    edges.push((tr, br));
-    edges.push((br, bl));
-    edges.push((bl, tl));
+    edges.push(((tl, tr), tree.color));
+    edges.push(((tr, br), tree.color));
+    edges.push(((br, bl), tree.color));
+    edges.push(((bl, tl), tree.color));
 }
 
 type TakeFn = Fn(&Box<QuadTree>) -> bool;
@@ -150,11 +173,15 @@ pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
     return cursor.take();
 }
 
-fn color_diff(a: Rgb<u8>, b: Rgb<u8>) -> f64 {
-    return diff_pow2_u8(a[0], b[0]) + diff_pow2_u8(a[1], b[1]) + diff_pow2_u8(a[2], b[2]);
+fn pow2(a: f64) -> f64 {
+    return a*a;
 }
 
-fn diff_pow2_u8(a: u8, b: u8) -> f64 {
-    let x = a as f64 - b as f64;
-    return x * x;
+fn color_diff(a: Rgb<u8>, b: Rgb<u8>) -> f64 {
+    // Source: http://www.compuphase.com/cmetric.htm
+    let rmean = (a[0] as i64 + b[0] as i64) / 2;
+    let r = a[0] as i64 - b[0] as i64;
+    let g = a[1] as i64 - b[1] as i64;
+    let b = a[2] as i64 - b[2] as i64;
+    return f64::sqrt(((((512 + rmean) * r * r) >> 8) + 4 * g * g + (((767 - rmean) * b * b) >> 8)) as f64);
 }

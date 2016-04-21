@@ -12,6 +12,7 @@ use quadtree::{
     QuadTree,
     Point
 };
+use shape_finder::Shape;
 
 pub fn render_quadtree_lines(base: &RgbImage, tree: &Box<QuadTree>) -> RgbImage {
     return ImageBuffer::from_fn(tree.region.width, tree.region.height, |x, y| {
@@ -33,17 +34,17 @@ pub fn render_quadtree(tree: &Box<QuadTree>) -> RgbImage {
     });
 }
 
-pub fn render_shapes(width: u32, height: u32, shapes: &Vec<Vec<Box<QuadTree>>>) -> RgbImage {
+pub fn render_shapes(width: u32, height: u32, shapes: &Vec<Shape>) -> RgbImage {
     let mut img = ImageBuffer::new(width, height);
     let mut rng = rand::thread_rng();
     for shape in shapes {
         let mut _color = [0 as u8; 3];
         rng.fill_bytes(&mut _color);
-        let color = Rgb(_color);
+        let mut color = Rgb(_color);
 
-        //let color = shape[0].color;
+        //color = shape[0].color;
 
-        for item in shape {
+        for item in &shape.parts {
             for x in item.region.x..item.region.x+item.region.width {
                 for y in item.region.y..item.region.y+item.region.height {
                     img.put_pixel(x, y, color);
