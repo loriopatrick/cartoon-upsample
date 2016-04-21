@@ -9,11 +9,11 @@ use image::{Pixel, Rgb};
 use quadtree::QuadTree;
 
 fn main() {
-    let src = image::open(&Path::new("images/frame2.png")).unwrap().to_rgb();
-    let im = image::imageops::resize(&src, 512, 512, image::FilterType::Nearest);
+    let src = image::open(&Path::new("images/frame3.png")).unwrap().to_rgb();
+    let im = image::imageops::resize(&src, 1024, 1024, image::FilterType::CatmullRom);
 
 
-    let tree = QuadTree::build(&im, 7.0);
+    let tree = QuadTree::build(&im, 10.0);
 
     let redraw = debug_render::render_quadtree(&tree);
     let lines = debug_render::render_quadtree_lines(&im, &tree);

@@ -58,9 +58,11 @@ fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>) -> Shape {
         let avg_area = area / parts.len() as f64;
         let do_take = move |option: &Box<QuadTree>| {
             let step = color_diff(src_color, option.color);
-            let diff = color_diff(avg_color, option.color);
+            //let diff = color_diff(avg_color, option.color);
             let area = option.region.area();
-            return diff < 60.0 && step < 40.0 && area > avg_area / 2.0|| area < 3.0 && avg_area < 5.0 && step < 50.0;
+            let thres = 50;
+            return area < 2.0;
+            //return diff < 60.0 && step < 40.0 && area > avg_area / 2.0|| area < 3.0 && avg_area < 5.0 && step < 50.0;
         };
 
         match take_by_edge(tree, &edge, &do_take) {
@@ -168,6 +170,10 @@ pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
             if res.is_some() { return res; }
             res = take_leaf(&mut tree.br);
             if res.is_some() { return res; }
+            return None;
+        }
+
+        if tree.region.area() > 2.0 {
             return None;
         }
     }
