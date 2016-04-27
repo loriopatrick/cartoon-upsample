@@ -9,40 +9,39 @@ pub struct Shape {
     pub area: f64,
 }
 
-pub fn take_shapes(mut tree: Box<QuadTree>) -> Vec<Shape> {
+pub fn take_shapes(option: &mut Option<Box<QuadTree>>, edges: bool) -> Vec<Shape> {
     let mut shapes = Vec::new();
-    let mut option = Some(tree);
 
     while true {
         let leaf = {
             let mut tree = option.as_mut().unwrap();
-            let mut leaf = take_leaf(&mut tree.tl);
+            let mut leaf = take_leaf(&mut tree.tl, edges);
 
             if leaf.is_none() {
-                leaf = take_leaf(&mut tree.tr);
+                leaf = take_leaf(&mut tree.tr, edges);
                 if leaf.is_none() {
-                    leaf = take_leaf(&mut tree.bl);
+                    leaf = take_leaf(&mut tree.bl, edges);
                     if leaf.is_none() {
-                        leaf = take_leaf(&mut tree.br);
+                        leaf = take_leaf(&mut tree.br, edges);
                     }
                 }
             }
 
             if leaf.is_none() {
-                return break;
+                break;
             }
 
             leaf
         };
 
         let leaf_val = leaf.unwrap();
-        shapes.push(find_shape(&mut option, leaf_val));
+        shapes.push(find_shape(option, leaf_val, edges));
     }
 
     return shapes;
 }
 
-fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>) -> Shape {
+fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>, do_edges: bool) -> Shape {
     let mut edges = Vec::new();
     let mut parts = Vec::new();
 
@@ -55,14 +54,14 @@ fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>) -> Shape {
     while edges.len() > 0 {
         let (edge, src_color) = edges.pop().unwrap();
 
-        let avg_area = area / parts.len() as f64;
         let do_take = move |option: &Box<QuadTree>| {
-            let step = color_diff(src_color, option.color);
-            //let diff = color_diff(avg_color, option.color);
-            let area = option.region.area();
-            let thres = 50;
-            return area < 2.0;
-            //return diff < 60.0 && step < 40.0 && area > avg_area / 2.0|| area < 3.0 && avg_area < 5.0 && step < 50.0;
+            if do_edges {
+                let area = option.region.area();
+                let thres = 50;
+                return area < 2.0;
+            }
+            let diff = color_diff(src_color, option.color);
+            return diff < 30.0;
         };
 
         match take_by_edge(tree, &edge, &do_take) {
@@ -153,7 +152,7 @@ fn take_by_edge(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeF
     return cursor.take();
 }
 
-pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
+pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>, edges: bool) -> Option<Box<QuadTree>> {
     if cursor.is_none() {
         return None;
     }
@@ -162,18 +161,18 @@ pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>) -> Option<Box<QuadTree>> {
         let mut tree = cursor.as_mut().unwrap();
 
         if !tree.is_leaf {
-            let mut res = take_leaf(&mut tree.tl);
+            let mut res = take_leaf(&mut tree.tl, edges);
             if res.is_some() { return res; }
-            res = take_leaf(&mut tree.tr);
+            res = take_leaf(&mut tree.tr, edges);
             if res.is_some() { return res; }
-            res = take_leaf(&mut tree.bl);
+            res = take_leaf(&mut tree.bl, edges);
             if res.is_some() { return res; }
-            res = take_leaf(&mut tree.br);
+            res = take_leaf(&mut tree.br, edges);
             if res.is_some() { return res; }
             return None;
         }
 
-        if tree.region.area() > 2.0 {
+        if edges && tree.region.area() > 2.0 {
             return None;
         }
     }

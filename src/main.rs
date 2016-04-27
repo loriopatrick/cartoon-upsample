@@ -21,10 +21,10 @@ fn main() {
     redraw.save(&Path::new("out/redraw.png")).unwrap();
     lines.save(&Path::new("out/lines.png")).unwrap();
 
-    let mut shapes = shape_finder::take_shapes(tree);
-    shapes.sort_by_key(|item| {
-        return item.area as i64;
-    });
+    let mut option = Some(tree);
+
+    let lines = shape_finder::take_shapes(&mut option, true);
+    let shapes = shape_finder::take_shapes(&mut option, false);
 
     let (width, height) = im.dimensions();
     let cool = debug_render::render_shapes(width, height, &shapes);
