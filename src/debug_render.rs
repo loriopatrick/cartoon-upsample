@@ -47,7 +47,7 @@ pub fn render_shapes(width: u32, height: u32, shapes: &Vec<Shape>) -> RgbImage {
         for item in &shape.parts {
             for x in item.region.x..item.region.x+item.region.width {
                 for y in item.region.y..item.region.y+item.region.height {
-                    img.put_pixel(x, y, color);
+                    img.put_pixel(x, y, shape.color);
                 }
             }
         }
