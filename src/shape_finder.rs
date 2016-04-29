@@ -61,7 +61,7 @@ fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>, do_edges: 
                 return area < 2.0;
             }
             let diff = color_diff(src_color, option.color);
-            return diff < 30.0 && option.region.width > 2 && option.region.height > 2;
+            return diff < 30.0;
         };
 
         match take_by_edge(tree, &edge, &do_take) {
@@ -126,20 +126,24 @@ fn take_by_edge(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeF
             return None;
         }
 
+        // Vertical edge
         if edge.0.x == edge.1.x {
+            // Made sure at least one side aligns with our edge
             if tree.region.x != edge.0.x && tree.region.x + tree.region.width != edge.0.x {
                 return None;
             }
             if (tree.region.y > edge.0.y || tree.region.y + tree.region.height < edge.0.y) &&
-                    (tree.region.y > edge.1.y && tree.region.y + tree.region.height < edge.1.y) {
+                    (tree.region.y > edge.1.y || tree.region.y + tree.region.height < edge.1.y) {
                 return None;
             }
-        } else {
+        }
+        // Horizontal Edge
+        else {
             if tree.region.y != edge.0.y && tree.region.y + tree.region.width != edge.0.y {
                 return None;
             }
             if (tree.region.x > edge.0.x || tree.region.x + tree.region.height < edge.0.x) &&
-                    (tree.region.x > edge.1.x && tree.region.x + tree.region.height < edge.1.x) {
+                    (tree.region.x > edge.1.x || tree.region.x + tree.region.height < edge.1.x) {
                 return None;
             }
         }

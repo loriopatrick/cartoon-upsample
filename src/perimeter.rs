@@ -34,6 +34,7 @@ fn rasterize(shape: &Shape, width: usize, height: usize) -> Vec<bool> {
 
 const CIRCLE_X:[i64; 8] = [-1, 0, 1, 1, 1, 0, -1, -1];
 const CIRCLE_Y:[i64; 8] = [-1, -1, -1, 0, 1, 1, 1, 0];
+const CIRCLE_B:[i64; 8] = [7, 7, 1, 1, 3, 3, 5, 5];
 
 fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
     let mut points = Vec::new();
@@ -64,76 +65,35 @@ fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
     }
 
     let mut circle = [false; 8];
-    let mut used = Vec::with_capacity(image.len() as usize);
-    for i in 0..image.len() {
-        used.push(false);
-    }
-
-    used[(cx + cy * w) as usize] = true;
+    let sx = cx;
+    let sy = cy;
     points.push(Point{x: cx as u32, y: cy as u32});
 
-    let mut backtrace = 0i64;
+    let mut last_empty_cid = 2 as usize;
 
     while true {
         for i in 0..8 {
             circle[i] = image[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize];
         }
+        
+        let start_search = CIRCLE_B[last_empty_cid];
 
-        // state = 0, no pixel
-        // state = 1, used pixel
-        // state = 2, pixel
-
-        let mut last_state = 0;
-        if used[((cx + CIRCLE_X[7]) + (cy + CIRCLE_Y[7]) * w) as usize] {
-            last_state = 1;
-        } else if circle[7] {
-            last_state = 2;
-        }
-
-        let mut found = false;
-        let mut next_cidx = 10 as i64;
-        for i in 0..8 {
-            let state = {
-                if used[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize] {
-                    1
-                } else if circle[i] {
-                    2
-                } else {
-                    0
-                }
-            };
-
-            if last_state == 0 && state == 2 {
-                next_cidx = i as i64;
-                break;
-            } else if last_state == 2 && state == 0 {
-                next_cidx = i as i64 - 1;
+        for i in 1..8 {
+            let idx = ((start_search + i) % 8) as usize;
+            if circle[idx] {
+                last_empty_cid = (idx + 7) % 8;
                 break;
             }
-
-            last_state = state;
         }
-
-        if next_cidx == 10 {
-            backtrace += 1;
-            let len = points.len() as i64;
-            if len == backtrace || backtrace > 10 {
-                break;
-            }
-            cx = points[(len - backtrace) as usize].x as i64;
-            cy = points[(len - backtrace) as usize].y as i64;
-            continue;
-        }
-
-        backtrace = 0;
-
-        next_cidx = (next_cidx + 8) % 8;
 
         // Move along border
-        cx += CIRCLE_X[next_cidx as usize];
-        cy += CIRCLE_Y[next_cidx as usize];
+        cx += CIRCLE_X[(last_empty_cid + 1) % 8];
+        cy += CIRCLE_Y[(last_empty_cid + 1) % 8];
 
-        used[(cx + cy * w) as usize] = true;
+        if cx == sx && cy == sy {
+            break;
+        }
+
         points.push(Point{x: cx as u32, y: cy as u32});
     }
 
