@@ -72,6 +72,8 @@ fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
     used[(cx + cy * w) as usize] = true;
     points.push(Point{x: cx as u32, y: cy as u32});
 
+    let mut backtrace = 0i64;
+
     while true {
         for i in 0..8 {
             circle[i] = image[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize];
@@ -113,8 +115,17 @@ fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
         }
 
         if next_cidx == 10 {
-            break;
+            backtrace += 1;
+            let len = points.len() as i64;
+            if len == backtrace || backtrace > 10 {
+                break;
+            }
+            cx = points[(len - backtrace) as usize].x as i64;
+            cy = points[(len - backtrace) as usize].y as i64;
+            continue;
         }
+
+        backtrace = 0;
 
         next_cidx = (next_cidx + 8) % 8;
 

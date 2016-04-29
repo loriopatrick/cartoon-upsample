@@ -7,11 +7,12 @@ mod perimeter;
 
 use std::path::Path;
 use image::{Pixel, Rgb};
-use quadtree::QuadTree;
+use shape_finder::Shape;
+use quadtree::{QuadTree, Point};
 
 fn main() {
-    let src = image::open(&Path::new("images/frame2.png")).unwrap().to_rgb();
-    let im = image::imageops::resize(&src, 1024, 1024, image::FilterType::CatmullRom);
+    let src = image::open(&Path::new("images/frame3.png")).unwrap().to_rgb();
+    let im = image::imageops::resize(&src, 512, 512, image::FilterType::CatmullRom);
 
     let tree = QuadTree::build(&im, 10.0);
 
@@ -26,14 +27,29 @@ fn main() {
     let lines = shape_finder::take_shapes(&mut option, true);
     let shapes = shape_finder::take_shapes(&mut option, false);
 
-    println!("lines {:?} shapes {:?}", lines.len(), shapes.len());
-
     let (width, height) = im.dimensions();
     let cool = debug_render::render_shapes(width, height, &shapes);
     cool.save(&Path::new("out/cool.png")).unwrap();
 
+    println!("<svg height=\"{}\" width=\"{}\">", width, height);
+    println!("<g stroke=\"black\" stroke-width=\"2\">");
     for shape in &shapes {
+        if shape.area < 10.0 {
+            continue;
+        }
         let points = perimeter::extract_perimeter(&shape, width as usize, height as usize);
-        println!("Computed perimeter for shape, it has {:?} points", points.len());
+        print!("<path d=\"M{} {} ", points[0].x, points[0].y);
+        let items = (points.len() - 1) / 3;
+        for i in 0..items {
+            let idx = i * 3;
+            print!("C {} {}, {} {}, {} {}",
+                   points[idx].x, points[idx].y,
+                   points[idx + 1].x, points[idx + 1].y,
+                   points[idx + 2].x, points[idx + 2].y
+           );
+        }
+        println!("Z\" fill=\"rgb({}, {}, {})\"/>", shape.color[0], shape.color[1], shape.color[2]);
     }
+    println!("</g>");
+    println!("</svg>");
 }

@@ -38,16 +38,18 @@ pub fn render_shapes(width: u32, height: u32, shapes: &Vec<Shape>) -> RgbImage {
     let mut img = ImageBuffer::new(width, height);
     let mut rng = rand::thread_rng();
     for shape in shapes {
+        if shape.area < 10.0 {
+            continue;
+        }
+
         let mut _color = [0 as u8; 3];
         rng.fill_bytes(&mut _color);
         let mut color = Rgb(_color);
 
-        //color = shape[0].color;
-
         for item in &shape.parts {
             for x in item.region.x..item.region.x+item.region.width {
                 for y in item.region.y..item.region.y+item.region.height {
-                    img.put_pixel(x, y, shape.color);
+                    img.put_pixel(x, y, color);
                 }
             }
         }
