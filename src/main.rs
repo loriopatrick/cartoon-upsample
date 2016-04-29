@@ -32,6 +32,8 @@ fn main() {
     let cool = debug_render::render_shapes(width, height, &shapes);
     cool.save(&Path::new("out/cool.png")).unwrap();
 
-    let points = perimeter::extract_perimeter(&shapes[0], width as usize, height as usize);
-    println!("Computed perimeter for shape, it has {:?} points", points);
+    for shape in &shapes {
+        let points = perimeter::extract_perimeter(&shape, width as usize, height as usize);
+        println!("Computed perimeter for shape, it has {:?} points", points.len());
+    }
 }

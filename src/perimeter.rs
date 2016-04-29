@@ -8,36 +8,48 @@ pub fn extract_perimeter(shape: &Shape, width: usize, height: usize) -> Vec<Poin
 }
 
 fn rasterize(shape: &Shape, width: usize, height: usize) -> Vec<bool> {
-    let mut data = Vec::with_capacity((width + 2) * (height + 2));
+    let len = (width + 2) * (height + 2);
+    let mut data = Vec::with_capacity(len);
+
+    for i in 0..len {
+        data.push(false);
+    }
+
     let w = width + 2;
     for part in &shape.parts {
-        for y in part.region.y..part.region.y+part.region.height {
-            for x in part.region.x..part.region.x+part.region.width {
-                data[((x + 1) + (y + 1) * w as u32) as usize] = true;
+        let sy = part.region.y as usize + 1;
+        let ey = sy + part.region.height as usize;
+
+        let sx = part.region.x as usize + 1;
+        let ex = sx + part.region.width as usize;
+
+        for y in sy..ey {
+            for x in sx..ex {
+                data[x + y * w] = true;
             }
         }
     }
     return data;
 }
 
-const CIRCLE_X:[usize; 8] = [0, 1, 2, 2, 2, 1, 0, 0];
-const CIRCLE_Y:[usize; 8] = [0, 0, 0, 1, 2, 2, 2, 1];
+const CIRCLE_X:[i64; 8] = [-1, 0, 1, 1, 1, 0, -1, -1];
+const CIRCLE_Y:[i64; 8] = [-1, -1, -1, 0, 1, 1, 1, 0];
 
 fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
     let mut points = Vec::new();
 
-    let mut cx = 0;
-    let mut cy = 0;
+    let mut cx = 0i64;
+    let mut cy = 0i64;
 
-    let w = width + 2;
+    let w = width as i64 + 2;
     
     // Get a pixel cx, cy that is on the edge of our shape
     {
         let mut found = false;
 
-        for y in 1..height {
-            for x in 0..width {
-                let pixel = image[x + y * w];
+        for y in 1..height as i64 {
+            for x in 0..width as i64 {
+                let pixel = image[(x + w * y) as usize];
                 if pixel {
                     found = true;
                     cy = y;
@@ -53,41 +65,64 @@ fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
 
     let mut circle = [false; 8];
     let mut used = Vec::with_capacity(image.len() as usize);
+    for i in 0..image.len() {
+        used.push(false);
+    }
 
-    used[cx + cy * w] = true;
+    used[(cx + cy * w) as usize] = true;
     points.push(Point{x: cx as u32, y: cy as u32});
 
     while true {
         for i in 0..8 {
-            circle[i] = image[(cx + CIRCLE_X[i] - 1) + (cy + CIRCLE_Y[i] - 1) * w];
+            circle[i] = image[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize];
         }
 
-        let mut empty_cidx = 0;
-        for i in 0..8 {
-            if !circle[i] {
-                empty_cidx = i;
-                break;
-            }
+        // state = 0, no pixel
+        // state = 1, used pixel
+        // state = 2, pixel
+
+        let mut last_state = 0;
+        if used[((cx + CIRCLE_X[7]) + (cy + CIRCLE_Y[7]) * w) as usize] {
+            last_state = 1;
+        } else if circle[7] {
+            last_state = 2;
         }
 
-        let mut border_cidx = 0;
         let mut found = false;
+        let mut next_cidx = 10 as i64;
+        for i in 0..8 {
+            let state = {
+                if used[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize] {
+                    1
+                } else if circle[i] {
+                    2
+                } else {
+                    0
+                }
+            };
 
-        for i in empty_cidx..empty_cidx+8 {
-            if circle[i % 8] && !used[(cx + CIRCLE_X[i] - 1) + (cy + CIRCLE_Y[i] - 1) * w] {
-                border_cidx = i % 8;
-                found = true;
+            if last_state == 0 && state == 2 {
+                next_cidx = i as i64;
+                break;
+            } else if last_state == 2 && state == 0 {
+                next_cidx = i as i64 - 1;
                 break;
             }
+
+            last_state = state;
         }
 
-        if !found {
+        if next_cidx == 10 {
             break;
         }
 
-        cx += CIRCLE_X[border_cidx] - 1;
-        cy += CIRCLE_Y[border_cidx] - 1;
-        used[cx + cy * w] = true;
+        next_cidx = (next_cidx + 8) % 8;
+
+        // Move along border
+        cx += CIRCLE_X[next_cidx as usize];
+        cy += CIRCLE_Y[next_cidx as usize];
+
+        used[(cx + cy * w) as usize] = true;
         points.push(Point{x: cx as u32, y: cy as u32});
     }
 
