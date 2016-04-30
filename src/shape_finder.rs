@@ -1,7 +1,8 @@
 extern crate image;
 
 use image::Rgb;
-use quadtree::{QuadTree, Point};
+use quadtree::QuadTree;
+use models::Point;
 
 pub struct Shape {
     pub color: Rgb<u8>,

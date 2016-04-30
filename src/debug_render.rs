@@ -2,16 +2,14 @@ extern crate rand;
 extern crate image;
 
 use self::rand::Rng;
+use models::Point;
 use image::{
     Rgb,
     RgbImage,
     ImageBuffer,
     Pixel
 };
-use quadtree::{
-    QuadTree,
-    Point
-};
+use quadtree::QuadTree;
 use shape_finder::Shape;
 
 pub fn render_quadtree_lines(base: &RgbImage, tree: &Box<QuadTree>) -> RgbImage {

@@ -1,14 +1,16 @@
 extern crate image;
 
+mod models;
 mod quadtree;
 mod shape_finder;
 mod debug_render;
 mod perimeter;
+mod path_processing;
 
 use std::path::Path;
 use image::{Pixel, Rgb};
 use shape_finder::Shape;
-use quadtree::{QuadTree, Point};
+use quadtree::QuadTree;
 
 fn main() {
     let src = image::open(&Path::new("images/frame3.png")).unwrap().to_rgb();
@@ -32,12 +34,14 @@ fn main() {
     cool.save(&Path::new("out/cool.png")).unwrap();
 
     println!("<svg height=\"{}\" width=\"{}\">", width, height);
-    println!("<g stroke=\"black\" stroke-width=\"2\">");
+    println!("<g stroke-width=\"5\">");
     for shape in &shapes {
         if shape.area < 10.0 {
             continue;
         }
-        let points = perimeter::extract_perimeter(&shape, width as usize, height as usize);
+        let mut points = perimeter::extract_perimeter(&shape, width as usize, height as usize);
+        path_processing::smooth(&mut points);
+        path_processing::smooth(&mut points);
         print!("<path d=\"M{} {} ", points[0].x, points[0].y);
         let items = (points.len() - 1) / 3;
         for i in 0..items {
@@ -48,7 +52,7 @@ fn main() {
                    points[idx + 2].x, points[idx + 2].y
            );
         }
-        println!("Z\" fill=\"rgb({}, {}, {})\"/>", shape.color[0], shape.color[1], shape.color[2]);
+        println!("Z\" stroke=\"rgb({},{},{})\" fill=\"rgb({}, {}, {})\"/>", shape.color[0], shape.color[1], shape.color[2], shape.color[0], shape.color[1], shape.color[2]);
     }
     println!("</g>");
     println!("</svg>");

@@ -1,5 +1,6 @@
 
-use quadtree::{QuadTree, Point, Region};
+use quadtree::QuadTree;
+use models::{Point, Region};
 use shape_finder::Shape;
 
 pub fn extract_perimeter(shape: &Shape, width: usize, height: usize) -> Vec<Point> {
