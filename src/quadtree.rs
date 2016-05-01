@@ -41,6 +41,13 @@ impl QuadTree {
         divide_tree(&mut tree, img, thres);
         return tree;
     }
+
+    pub fn center(&self) -> Point {
+        return Point{
+            x: self.region.x + self.region.width / 2,
+            y: self.region.y + self.region.height / 2,
+        };
+    }
 }
 
 fn divide_tree(tree: &mut QuadTree, img: &RgbImage, thres: f64) {

@@ -13,7 +13,7 @@ use shape_finder::Shape;
 use quadtree::QuadTree;
 
 fn main() {
-    let src = image::open(&Path::new("images/frame3.png")).unwrap().to_rgb();
+    let src = image::open(&Path::new("images/frame2.png")).unwrap().to_rgb();
     let im = image::imageops::resize(&src, 512, 512, image::FilterType::CatmullRom);
 
     let tree = QuadTree::build(&im, 10.0);
@@ -34,14 +34,14 @@ fn main() {
     cool.save(&Path::new("out/cool.png")).unwrap();
 
     println!("<svg height=\"{}\" width=\"{}\">", width, height);
-    println!("<g stroke-width=\"5\">");
+    println!("<g stroke-width=\"7\">");
     for shape in &shapes {
         if shape.area < 10.0 {
             continue;
         }
         let mut points = perimeter::extract_perimeter(&shape, width as usize, height as usize);
         path_processing::smooth(&mut points);
-        path_processing::smooth(&mut points);
+        points = path_processing::simplify(points, 5.0);
         print!("<path d=\"M{} {} ", points[0].x, points[0].y);
         let items = (points.len() - 1) / 3;
         for i in 0..items {
@@ -53,6 +53,28 @@ fn main() {
            );
         }
         println!("Z\" stroke=\"rgb({},{},{})\" fill=\"rgb({}, {}, {})\"/>", shape.color[0], shape.color[1], shape.color[2], shape.color[0], shape.color[1], shape.color[2]);
+    }
+    println!("</g>");
+    println!("<g stroke-width=\"5\" fill=\"black\">");
+    for shape in &lines {
+        if shape.area < 10.0 {
+            continue;
+        }
+        let mut points = perimeter::extract_perimeter(&shape, width as usize, height as usize);
+        path_processing::smooth(&mut points);
+        points = path_processing::simplify(points, 5.0);
+        print!("<path d=\"M{} {} ", points[0].x, points[0].y);
+        let items = (points.len() - 1) / 3;
+        for i in 0..items {
+            let idx = i * 3;
+            print!("C {} {}, {} {}, {} {}",
+                   points[idx].x, points[idx].y,
+                   points[idx + 1].x, points[idx + 1].y,
+                   points[idx + 2].x, points[idx + 2].y
+           );
+        }
+        //println!("Z\" stroke=\"rgb({},{},{})\"/>", shape.color[0], shape.color[1], shape.color[2]);
+        println!("Z\" />");
     }
     println!("</g>");
     println!("</svg>");
