@@ -50,7 +50,11 @@ pub fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point
 
     while true {
         for i in 0..8 {
-            circle[i] = image[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize];
+            let idx = ((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w);
+            if idx < 0 {
+                return points;
+            }
+            circle[i] = image[idx as usize];
         }
         
         let start_search = CIRCLE_B[last_empty_cid];

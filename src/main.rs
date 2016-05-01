@@ -78,24 +78,23 @@ fn main() {
         if shape.area < 10.0 {
             continue;
         }
-        let mut groups = curve_builder::get_points(&shape);
-        for mut points in groups {
-            //path_processing::smooth(&mut points);
-            //points = path_processing::simplify(points, 10.0);
-            //path_processing::smooth(&mut points);
-            write!(&mut file, "<path d=\"M{} {} ", points[0].x, points[0].y).unwrap();
-            let items = (points.len() - 1) / 3;
-            for i in 0..items {
-                let idx = i * 3;
-                write!(&mut file, "C {} {}, {} {}, {} {}",
-                       points[idx].x, points[idx].y,
-                       points[idx + 1].x, points[idx + 1].y,
-                       points[idx + 2].x, points[idx + 2].y
-               ).unwrap();
-            }
-            write!(&mut file, "\" />\n").unwrap();
+        let mut points = curve_builder::get_points(&shape, width as usize, height as usize);
+        //path_processing::smooth(&mut points);
+        //points = path_processing::simplify(points, 10.0);
+        //path_processing::smooth(&mut points);
+        write!(&mut file, "<path d=\"M{} {} ", points[0].x, points[0].y).unwrap();
+        let items = (points.len() - 1) / 3;
+        for i in 0..items {
+            let idx = i * 3;
+            write!(&mut file, "C {} {}, {} {}, {} {}",
+                   points[idx].x, points[idx].y,
+                   points[idx + 1].x, points[idx + 1].y,
+                   points[idx + 2].x, points[idx + 2].y
+           ).unwrap();
         }
+        write!(&mut file, "\" />\n").unwrap();
     }
     write!(&mut file, "</g>").unwrap();
     write!(&mut file, "</svg>").unwrap();
+    file.flush();
 }

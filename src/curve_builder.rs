@@ -1,52 +1,14 @@
 
+use perimeter;
 use shape::Shape;
 use quadtree::QuadTree;
 use models::{Point, Region};
 
-pub fn get_points(shape: &Shape) -> Vec<Vec<Point>> {
-    let mut pre_points = Vec::new();
+pub fn get_points(shape: &Shape, width: usize, height: usize) -> Vec<Point> {
+    let mut image = shape.rasterize(width, height);
 
-    let mut cx = 0;
-    let mut cy = 0;
-    let mut len = 0;
-    for part in &shape.parts {
-        let point = part.region.center();
-        cx += point.x;
-        cy += point.y;
-        len += 1;
-        if len == 5 {
-            pre_points.push(Point{x: cx / 5, y: cy / 5});
-            cx = 0;
-            cy = 0;
-            len = 0;
-        }
-    }
-
-    let mut groups = Vec::new();
-
-    let mut idx = 0;
-    while idx < pre_points.len() {
-        let mut points = Vec::new();
-        let mut last_point = pre_points[idx];
-        points.push(last_point);
-        idx += 1;
-
-        while idx < pre_points.len() {
-            let point = pre_points[idx];
-            if points[points.len() as usize - 1].distance(point) > 15.0 {
-                break;
-            }
-            last_point = point;
-            points.push(point);
-            idx += 1;
-        }
-
-        if points.len() > 3 {
-            groups.push(points);
-        }
-    }
-
-    return groups;
+    thin(&mut image, width, height);
+    return perimeter::get_perimeter(image, width, height);
 }
 
 
@@ -62,8 +24,8 @@ fn thin(image: &mut Vec<bool>, width: usize, height: usize) {
 
     while iter < 10 {
         let w = width + 2;
-        for y in 1..height+1 {
-            for x in 1..w {
+        for y in 1..height {
+            for x in 1..height {
                 let p2 = bool_to_byte(image[x-1 + y * w]);
                 let p3 = bool_to_byte(image[x-1 + (y+1) * w]);
                 let p4 = bool_to_byte(image[x + (y+1) * w]);
