@@ -10,7 +10,7 @@ use image::{
     Pixel
 };
 use quadtree::QuadTree;
-use shape_finder::Shape;
+use shape::Shape;
 
 pub fn render_quadtree_lines(base: &RgbImage, tree: &Box<QuadTree>) -> RgbImage {
     return ImageBuffer::from_fn(tree.region.width, tree.region.height, |x, y| {

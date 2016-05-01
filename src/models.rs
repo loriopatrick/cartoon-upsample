@@ -12,13 +12,6 @@ pub struct Point {
     pub y: u32,
 }
 
-pub struct Curve {
-    pub a: Point,
-    pub b: Point,
-    pub c: Point,
-    pub d: Point,
-}
-
 impl Region {
     pub fn contains(&self, p: &Point) -> bool {
         return self.x <= p.x && self.y <= p.y &&
@@ -27,6 +20,10 @@ impl Region {
 
     pub fn area(&self) -> f64 {
         return self.width as f64 * self.height as f64;
+    }
+
+    pub fn center(&self) -> Point {
+        return Point{ x: self.x + self.width / 2, y: self.y + self.height / 2};
     }
 }
 

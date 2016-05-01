@@ -1,43 +1,19 @@
 
 use quadtree::QuadTree;
 use models::{Point, Region};
-use shape_finder::Shape;
+use shape::Shape;
 
 pub fn extract_perimeter(shape: &Shape, width: usize, height: usize) -> Vec<Point> {
-    let img = rasterize(shape, width, height);
+    let img = shape.rasterize(width, height);
     return get_perimeter(img, width, height);
 }
 
-fn rasterize(shape: &Shape, width: usize, height: usize) -> Vec<bool> {
-    let len = (width + 2) * (height + 2);
-    let mut data = Vec::with_capacity(len);
-
-    for i in 0..len {
-        data.push(false);
-    }
-
-    let w = width + 2;
-    for part in &shape.parts {
-        let sy = part.region.y as usize + 1;
-        let ey = sy + part.region.height as usize;
-
-        let sx = part.region.x as usize + 1;
-        let ex = sx + part.region.width as usize;
-
-        for y in sy..ey {
-            for x in sx..ex {
-                data[x + y * w] = true;
-            }
-        }
-    }
-    return data;
-}
 
 const CIRCLE_X:[i64; 8] = [-1, 0, 1, 1, 1, 0, -1, -1];
 const CIRCLE_Y:[i64; 8] = [-1, -1, -1, 0, 1, 1, 1, 0];
 const CIRCLE_B:[i64; 8] = [7, 7, 1, 1, 3, 3, 5, 5];
 
-fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
+pub fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
     let mut points = Vec::new();
 
     let mut cx = 0i64;

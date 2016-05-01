@@ -10,36 +10,60 @@ pub struct Shape {
     pub area: f64,
 }
 
-pub fn take_shapes(option: &mut Option<Box<QuadTree>>, edges: bool) -> Vec<Shape> {
-    let mut shapes = Vec::new();
+impl Shape {
+    pub fn take_shapes(option: &mut Option<Box<QuadTree>>, edges: bool) -> Vec<Shape> {
+        let mut shapes = Vec::new();
 
-    while true {
-        let leaf = {
-            let mut tree = option.as_mut().unwrap();
-            let mut leaf = take_leaf(&mut tree.tl, edges);
+        while true {
+            let leaf = {
+                let mut tree = option.as_mut().unwrap();
+                let mut leaf = take_leaf(&mut tree.tl, edges);
 
-            if leaf.is_none() {
-                leaf = take_leaf(&mut tree.tr, edges);
                 if leaf.is_none() {
-                    leaf = take_leaf(&mut tree.bl, edges);
+                    leaf = take_leaf(&mut tree.tr, edges);
                     if leaf.is_none() {
-                        leaf = take_leaf(&mut tree.br, edges);
+                        leaf = take_leaf(&mut tree.bl, edges);
+                        if leaf.is_none() {
+                            leaf = take_leaf(&mut tree.br, edges);
+                        }
                     }
                 }
-            }
 
-            if leaf.is_none() {
-                break;
-            }
+                if leaf.is_none() {
+                    break;
+                }
 
-            leaf
-        };
+                leaf
+            };
 
-        let leaf_val = leaf.unwrap();
-        shapes.push(find_shape(option, leaf_val, edges));
+            let leaf_val = leaf.unwrap();
+            shapes.push(find_shape(option, leaf_val, edges));
+        }
+
+        return shapes;
     }
 
-    return shapes;
+    pub fn rasterize(&self, width: usize, height: usize) -> Vec<bool> {
+        let len = (width + 2) * (height + 2);
+        let mut data = Vec::with_capacity(len);
+        data.resize(len, false);
+
+        let w = width + 2;
+        for part in &self.parts {
+            let sy = part.region.y as usize + 1;
+            let ey = sy + part.region.height as usize;
+
+            let sx = part.region.x as usize + 1;
+            let ex = sx + part.region.width as usize;
+
+            for y in sy..ey {
+                for x in sx..ex {
+                    data[x + y * w] = true;
+                }
+            }
+        }
+        return data;
+    }
 }
 
 fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>, do_edges: bool) -> Shape {
@@ -162,7 +186,7 @@ fn take_by_edge(cursor: &mut Option<Box<QuadTree>>, edge: &Edge, do_take: &TakeF
     return cursor.take();
 }
 
-pub fn take_leaf(cursor: &mut Option<Box<QuadTree>>, edges: bool) -> Option<Box<QuadTree>> {
+fn take_leaf(cursor: &mut Option<Box<QuadTree>>, edges: bool) -> Option<Box<QuadTree>> {
     if cursor.is_none() {
         return None;
     }
