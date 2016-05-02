@@ -11,6 +11,7 @@ use image::{
 };
 use quadtree::QuadTree;
 use shape::Shape;
+use imbin::ImBin;
 
 pub fn render_quadtree_lines(base: &RgbImage, tree: &Box<QuadTree>) -> RgbImage {
     return ImageBuffer::from_fn(tree.region.width, tree.region.height, |x, y| {
@@ -28,6 +29,16 @@ pub fn render_quadtree(tree: &Box<QuadTree>) -> RgbImage {
         match get_tree(&Point{x: x, y: y}, tree) {
             None => Rgb([0 as u8; 3]),
             Some(x) => x.color,
+        }
+    });
+}
+
+pub fn render_imbin(im: &ImBin) -> RgbImage {
+    return ImageBuffer::from_fn(im.width as u32, im.height as u32, |x, y| {
+        if im.data[(x as i64 + y as i64 * im.wrow as i64) as usize] {
+            Rgb([0 as u8; 3])
+        } else {
+            Rgb([255 as u8; 3])
         }
     });
 }

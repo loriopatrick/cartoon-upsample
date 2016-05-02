@@ -45,7 +45,6 @@ impl Shape {
     }
 
     pub fn paint(&self, image: &mut ImBin) {
-        let data = image.data;
         let w = image.wrow;
         for part in &self.parts {
             let sy = part.region.y as usize + 1;
@@ -56,7 +55,7 @@ impl Shape {
 
             for y in sy..ey {
                 for x in sx..ex {
-                    data[x + y * w] = true;
+                    image.data[x + y * w] = true;
                 }
             }
         }

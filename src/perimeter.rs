@@ -2,10 +2,11 @@
 use quadtree::QuadTree;
 use models::{Point, Region};
 use shape::Shape;
+use imbin::ImBin;
 
-pub fn extract_perimeter(shape: &Shape, width: usize, height: usize) -> Vec<Point> {
-    let img = shape.rasterize(width, height);
-    return get_perimeter(img, width, height);
+pub fn extract_perimeter(shape: &Shape, buffer: &mut ImBin) -> Vec<Point> {
+    shape.paint(buffer);
+    return get_perimeter(buffer);
 }
 
 
@@ -13,12 +14,14 @@ const CIRCLE_X:[i64; 8] = [-1, 0, 1, 1, 1, 0, -1, -1];
 const CIRCLE_Y:[i64; 8] = [-1, -1, -1, 0, 1, 1, 1, 0];
 const CIRCLE_B:[i64; 8] = [7, 7, 1, 1, 3, 3, 5, 5];
 
-pub fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point> {
+pub fn get_perimeter(image: &ImBin) -> Vec<Point> {
     let mut points = Vec::new();
 
     let mut cx = 0i64;
     let mut cy = 0i64;
 
+    let width = image.width;
+    let height = image.height;
     let w = width as i64 + 2;
     
     // Get a pixel cx, cy that is on the edge of our shape
@@ -27,7 +30,7 @@ pub fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point
 
         for y in 1..height as i64 {
             for x in 0..width as i64 {
-                let pixel = image[(x + w * y) as usize];
+                let pixel = image.data[(x + w * y) as usize];
                 if pixel {
                     found = true;
                     cy = y;
@@ -54,7 +57,7 @@ pub fn get_perimeter(image: Vec<bool>, width: usize, height: usize) -> Vec<Point
         }
 
         for i in 0..8 {
-            circle[i] = image[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize];
+            circle[i] = image.data[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize];
         }
         
         let start_search = CIRCLE_B[last_empty_cid];

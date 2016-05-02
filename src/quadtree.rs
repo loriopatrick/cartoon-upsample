@@ -77,10 +77,10 @@ fn divide_tree(tree: &mut QuadTree, img: &RgbImage, thres: f64) {
         (sum[2] / items) as u8,
     ]};
 
-    for x in xi..xf {
-        for y in yi..yf {
+    for y in yi..yf {
+        for x in xi..xf {
             let pixel = img.get_pixel(x, y);
-            var += color_diff(&avg, pixel);
+            var += color_diff(&avg, pixel).powf(3.0);
         }
     }
 
