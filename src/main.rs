@@ -7,6 +7,7 @@ mod debug_render;
 mod perimeter;
 mod path_processing;
 mod curve_builder;
+mod imbin;
 
 use std::path::Path;
 use std::env;
@@ -15,6 +16,7 @@ use std::io::Write;
 use image::{Pixel, Rgb};
 use shape::Shape;
 use quadtree::QuadTree;
+use imbin::ImBin;
 
 fn main() {
     let mut args: Vec<String> = env::args().collect();
@@ -45,6 +47,7 @@ fn main() {
     println!("- extracted features");
 
     let (width, height) = im.dimensions();
+    let im_buf1 = 
 
     //let cool = debug_render::render_shapes(width, height, &shapes);
     //cool.save(&Path::new("out/cool.png")).unwrap();
@@ -73,26 +76,26 @@ fn main() {
         write!(&mut file, "Z\" stroke=\"rgb({},{},{})\" fill=\"rgb({}, {}, {})\"/>\n", shape.color[0], shape.color[1], shape.color[2], shape.color[0], shape.color[1], shape.color[2]).unwrap();
     }
     write!(&mut file, "</g>\n").unwrap();
-    write!(&mut file, "<g stroke-width=\"2\" stroke=\"black\" fill=\"none\">\n").unwrap();
+    write!(&mut file, "<g stroke-width=\"5\" stroke=\"black\" fill=\"none\">\n").unwrap();
     for shape in &lines {
-        if shape.area < 10.0 {
+        if shape.area < 100.0 {
             continue;
         }
-        let mut points = curve_builder::get_points(&shape, width as usize, height as usize);
-        //path_processing::smooth(&mut points);
-        //points = path_processing::simplify(points, 10.0);
-        //path_processing::smooth(&mut points);
-        write!(&mut file, "<path d=\"M{} {} ", points[0].x, points[0].y).unwrap();
-        let items = (points.len() - 1) / 3;
-        for i in 0..items {
-            let idx = i * 3;
-            write!(&mut file, "C {} {}, {} {}, {} {}",
-                   points[idx].x, points[idx].y,
-                   points[idx + 1].x, points[idx + 1].y,
-                   points[idx + 2].x, points[idx + 2].y
-           ).unwrap();
+        let mut curves = curve_builder::get_points(&shape, width as usize, height as usize);
+        for mut points in curves {
+            points = path_processing::simplify(points, 10.0);
+            write!(&mut file, "<path d=\"M{} {} ", points[0].x, points[0].y).unwrap();
+            let items = (points.len() - 1) / 3;
+            for i in 0..items {
+                let idx = i * 3;
+                write!(&mut file, "C {} {}, {} {}, {} {}",
+                       points[idx].x, points[idx].y,
+                       points[idx + 1].x, points[idx + 1].y,
+                       points[idx + 2].x, points[idx + 2].y
+               ).unwrap();
+            }
+            write!(&mut file, "\" />\n").unwrap();
         }
-        write!(&mut file, "\" />\n").unwrap();
     }
     write!(&mut file, "</g>").unwrap();
     write!(&mut file, "</svg>").unwrap();

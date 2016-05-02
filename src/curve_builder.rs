@@ -4,11 +4,81 @@ use shape::Shape;
 use quadtree::QuadTree;
 use models::{Point, Region};
 
-pub fn get_points(shape: &Shape, width: usize, height: usize) -> Vec<Point> {
+pub fn get_points(shape: &Shape, width: usize, height: usize) -> Vec<Vec<Point>> {
     let mut image = shape.rasterize(width, height);
-
     thin(&mut image, width, height);
-    return perimeter::get_perimeter(image, width, height);
+
+    let mut curves = Vec::new();
+    let mut used = Vec::with_capacity(image.len());
+    used.resize(image.len(), false);
+
+    println!("start");
+    while true {
+        println!("collect");
+        let points = get_curve(&image, &mut used, width, height);
+        if points.len() == 0 {
+            break;
+        }
+        curves.push(points);
+    }
+
+    println!("done");
+    return curves;
+}
+
+const CIRCLE_X:[i64; 8] = [-1, 0, 1, 1, 1, 0, -1, -1];
+const CIRCLE_Y:[i64; 8] = [-1, -1, -1, 0, 1, 1, 1, 0];
+
+fn get_curve(image: &Vec<bool>, used: &mut Vec<bool>, width: usize, height: usize) -> Vec<Point> {
+    let mut cx = 0i64;
+    let mut cy = 0i64;
+
+    let w = width as i64 + 2;
+
+    for y in 1..height as i64 {
+        for x in 0..(width+1) as i64 {
+            let idx = (x + y * w) as usize;
+            if image[idx] && !used[idx] {
+                cx = x as i64;
+                cy = y as i64;
+                break;
+            }
+        }
+    }
+
+    let mut points = Vec::new();
+
+    if cx == 0 && cy == 0 {
+        return points;
+    }
+
+    used[(cx + cy * w) as usize] = true;
+    points.push(Point{ x: cx as u32, y: cy as u32 });
+
+    while true {
+        let mut found = false;
+        let mut pos = 0;
+        for i in 0..8 {
+            let idx = ((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize;
+            if image[idx] && !used[idx] {
+                pos = i;
+                found = true;
+                break;
+            }
+        }
+
+        if !found {
+            break;
+        }
+
+        cx += CIRCLE_X[pos];
+        cy += CIRCLE_Y[pos];
+
+        used[(cx + cy * w) as usize] = true;
+        points.push(Point{ x: cx as u32, y: cy as u32 });
+    }
+
+    return points;
 }
 
 

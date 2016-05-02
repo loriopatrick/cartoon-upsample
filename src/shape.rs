@@ -3,6 +3,7 @@ extern crate image;
 use image::Rgb;
 use quadtree::QuadTree;
 use models::Point;
+use imbin::ImBin;
 
 pub struct Shape {
     pub color: Rgb<u8>,
@@ -43,12 +44,9 @@ impl Shape {
         return shapes;
     }
 
-    pub fn rasterize(&self, width: usize, height: usize) -> Vec<bool> {
-        let len = (width + 2) * (height + 2);
-        let mut data = Vec::with_capacity(len);
-        data.resize(len, false);
-
-        let w = width + 2;
+    pub fn paint(&self, image: &mut ImBin) {
+        let data = image.data;
+        let w = image.wrow;
         for part in &self.parts {
             let sy = part.region.y as usize + 1;
             let ey = sy + part.region.height as usize;
@@ -62,7 +60,6 @@ impl Shape {
                 }
             }
         }
-        return data;
     }
 }
 
@@ -83,9 +80,6 @@ fn find_shape(tree: &mut Option<Box<QuadTree>>, start: Box<QuadTree>, do_edges: 
 
         let do_take = move |option: &Box<QuadTree>| {
             if do_edges {
-                if parts_count > 400 {
-                    return false;
-                }
                 let area = option.region.area();
                 let thres = 50;
                 return area < 2.0;
