@@ -26,16 +26,16 @@ fn main() {
     println!("Processing {} to {}", input, output);
 
     let src = image::open(&Path::new(input)).unwrap().to_rgb();
-    let im = image::imageops::resize(&src, 2048, 2048, image::FilterType::CatmullRom);
+    let im = image::imageops::resize(&src, 4096, 4096, image::FilterType::CatmullRom);
     println!("- preprocessed image");
 
-    let tree = QuadTree::build(&im, 200.0);
+    let tree = QuadTree::build(&im, 100.0);
     println!("- built tree");
 
     //let redraw = debug_render::render_quadtree(&tree);
-    //let lines = debug_render::render_quadtree_lines(&im, &tree);
+    let lines = debug_render::render_quadtree_lines(&im, &tree);
     //redraw.save(&Path::new("out/redraw.png")).unwrap();
-    //lines.save(&Path::new("out/lines.png")).unwrap();
+    lines.save(&Path::new("out/lines.png")).unwrap();
     //return;
 
     let mut option = Some(tree);
@@ -63,7 +63,7 @@ fn main() {
     write!(&mut file, "<svg height=\"{}\" width=\"{}\">\n", width, height).unwrap();
     write!(&mut file, "<g stroke-width=\"10\">\n").unwrap();
     for shape in &shapes {
-        if shape.area < 100.0 {
+        if shape.area < 400.0 {
             continue;
         }
         im_buf1.clear();
