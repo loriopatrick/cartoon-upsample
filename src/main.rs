@@ -33,9 +33,9 @@ fn main() {
     println!("- built tree");
 
     //let redraw = debug_render::render_quadtree(&tree);
-    let lines = debug_render::render_quadtree_lines(&im, &tree);
+    //let lines = debug_render::render_quadtree_lines(&im, &tree);
     //redraw.save(&Path::new("out/redraw.png")).unwrap();
-    lines.save(&Path::new("out/lines.png")).unwrap();
+    //lines.save(&Path::new("out/lines.png")).unwrap();
     //return;
 
     let mut option = Some(tree);
