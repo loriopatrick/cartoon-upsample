@@ -1,9 +1,10 @@
 # Cartoon Upsample
 
-I set out to develop a system that upscales frames from cartoon videos. Bilinear interpolation works well for most content but in cartoons it blurs well defined shapes. Many cartoons today are rendered from vector components. If we had the vector components that rendered our source frame we could simply rerender the image at a higher resolution. This project attempts to determine the original components that rendered the frame to produce high quality renders at larger resolutions.
+I set out to develop a system that upscales frames from cartoon videos. Bilinear interpolation works well for most content, but in cartoons it blurs well defined shapes. Many cartoons today are rendered from vector components. If we had the vector components that rendered our source frame we could simply rerender the image at a higher resolution. This project attempts to determine the original components that rendered the frame to produce high quality renders at larger resolutions.
 
-Illustrating the system I came up with I'll walk through the process with the following image.
+To illustrating the system I'm going to walk through the process with a frame from Futurama.
 
+![future](images/future.png)
 
 
 ## Quadtree (src/quadtree.rs)
@@ -74,7 +75,7 @@ The algorithm for shape extraction works by first finding at a leaf in the quadt
 124 }
 ```
 
-While edges is not empty we pop off an edge and recusrively search the quadtree for a collision between a leaf and the edge.
+While edges is not empty we pop off an edge and recusrively search the quadtree for a collision between the edges and a leaf.
 
 ```
 151         // Vertical edge
@@ -100,24 +101,24 @@ While edges is not empty we pop off an edge and recusrively search the quadtree 
 171         } 
 ```
 
-If a collision with a leaf is found it means that the leaf borders a component in our shape. If this bordering leaf meets the conditions of the shape, it is removed from the quadtree, added to the shape, and the edges of the leaf's region are pushed on the edges stack. This algorithm grows the shape by searching for neighboring leafs in the quadtree. An important part of this algorithm is that it removes the leaf from the quadtree when it is placed into a shape. This prevents a leaf from being a part of two leafs.
+If a collision with a leaf is found it means that the leaf borders a component in our shape. If this bordering leaf meets the conditions of the shape, it is removed from the quadtree, added to the shape, and the edges of the leaf's region are pushed on the edges stack. This algorithm grows the shape by searching for neighboring leafs in the quadtree. An important part of this algorithm is that it removes the leaf from the quadtree when it is placed into a shape. This prevents a leaf from being a part of two shapes.
 
-I tried a lots of metric to determine whether a leaf should be considered part of a shape. The best metric I came up with used the color difference between the new leaf and the neighboring leaf, and the new leaf and the shape's average color.
+I tried a lots of metric to determine whether a leaf should be considered part of a shape. The best metric I came up with used the difference between the shape's average color and the new leaf's color, and the shape's neighboring leaf's color and the new leaf's color.
 
 ```
-86             return color_diff(cc, option.color) < 80.0 || color_diff(src_color, option.color) < 5.0; 
+color_diff(cc, option.color) < 80.0 || color_diff(src_color, option.color) < 5.0; 
 ```
 
-The best result I could derive from this is disapointing. In this debug render each shape is given a random color.
+The best results I could derive from this were disapointing. This is a debug render where each shape is given a random color.
 
 ![shapes](images/shapes.png)
 
-The image has a lot of noise and some errors. Notice how the hair in the left bleeds into the the background wall. After trying this problem with many different tactics I came up with a clever idea while looking at the debug render of the quadtree.
+The image has a lot of noise and some errors. Notice how the hair in the back left bleeds into the the background wall. After trying this problem with many different tactics I came up with a clever idea while looking at the debug render of the quadtree.
 
 ![lines](images/lines.png)
 
 In the debug render the outline of the shapes are rendered with thick black lines. These black lines are the borders of the quadtree's leafs. They form a thick black line because the variance in the outline regions is so high the quadtree has split till the leafs are the size of a single pixel. The idea is to use the algorithm above to construct a shape that grows based on the neighbor's leaf size rather than color.
 
-In the first step we collect all the shapes where the area of the leaf is 1 pixel. Here is a debug render where each shape is given a random color.
+In the first step we collect all the shapes where the area of the leaf is 1 pixel. Here is a debug render of these shapes where each shape is given a random color.
 
 ![outline.shape](images/outline.shape.png)
