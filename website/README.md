@@ -110,7 +110,7 @@ I tried a lots of metric to determine whether a leaf should be considered part o
 
 The best result I could derive from this is disapointing. In this debug render each shape is given a random color.
 
-![shapes](images/shapes.rs)
+![shapes](images/shapes.png)
 
 The image has a lot of noise and some errors. Notice how the hair in the left bleeds into the the background wall. After trying this problem with many different tactics I came up with a clever idea while looking at the debug render of the quadtree.
 
