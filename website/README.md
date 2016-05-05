@@ -156,10 +156,31 @@ The indexes for the circle are mapped as
 6 | 5 | 4
 ```
 
-Then starting at an index on the circle I know is outside the of the polygon I scan clockwise through the circle until I hit a shadded pixel. This shadded pixel becomes the new cursor position. By moving around the polygon I can always know the point on the next cursor's circle that is outside of the polygon. The index on the circle is looked up in `CIRCLE_B` with the index the shadded pixel was found.
+Then starting at an index on the circle I know is outside the of the polygon, I scan clockwise through the circle until I hit a shadded pixel. This shadded pixel becomes the new cursor position. By moving around the polygon I can always know the point on the next cursor's circle that is outside of the polygon. The index on the circle is looked up in `CIRCLE_B` with the circle index where the shadded pixel was found.
 
 ```
 15 const CIRCLE_B:[i64; 8] = [7, 7, 1, 1, 3, 3, 5, 5];
 ```
 
-We know that circle index `7` is outside of the polygon for the first pixel because we found it by search from left to right where the image had a one pixel padding. This algorithm goes around the perimeter of shape in a binary image in a clockwise fashion and collects all the points along the way.
+We know that circle index `7` is outside of the polygon for the first pixel because we found it by searching from left to right where the image had a one pixel padding. This algorithm goes around the perimeter of the shape in a binary image in a clockwise fashion and collects all the points along the way.
+
+
+## Path Processing (src/path\_processing.rs)
+
+We now have the a perimeter that describes each of our shapes. Here is a render drawing each polygon with the shape's average color.
+
+![sharp](images/sharp.png)
+
+This looks pretty good. With a little processing we can smooth out the shape's edges and be on our way.
+
+The first thing I do is apply a weighted average to the points on the path using the following kernel.
+
+```
+//                                     current point
+//                                          \|/
+5     let kernel = [0.15, 0.25, 0.55, 0.75, 1.0, 0.7, 0.5, 0.2, 0.1];
+```
+
+The second thing I do is simplify the points along the path using the Ramer-Douglas-Peucker algorithm. Here is a render after processing the path.
+
+![smooth1](images/smooth1.png)
