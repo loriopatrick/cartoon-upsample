@@ -27,14 +27,14 @@ To calculate the difference between pixels I took into account color perception.
 Through experimentation I modified my variance calculation to raise the residual error to the third power.
 
 ```
- 80     for y in yi..yf {
- 81         for x in xi..xf {
- 82             let pixel = img.get_pixel(x, y);
- 83             var += color_diff(&avg, pixel).powf(3.0);
- 84         }
- 85     }
- 86 
- 87     var /= items;
+80     for y in yi..yf {
+81         for x in xi..xf {
+82             let pixel = img.get_pixel(x, y);
+83             var += color_diff(&avg, pixel).powf(3.0);
+84         }
+85     }
+86 
+87     var /= items;
 ```
 
 Here is a debug render where the outline of each leaf is rendered in black over of the original image.
@@ -51,11 +51,11 @@ Here is a debug render where each leaf of the quadtree is rendered as a solid co
 Now that I have a quadtree that describes the image, I want to construct an arrays of shapes. Here I define a shape as basically just an array of connected quadtree leafs.
 
 ```
-  8 pub struct Shape {
-  9     pub color: Rgb<u8>,
- 10     pub parts: Vec<Box<QuadTree>>,
- 11     pub area: f64,
- 12 } 
+ 8 pub struct Shape {
+ 9     pub color: Rgb<u8>,
+10     pub parts: Vec<Box<QuadTree>>,
+11     pub area: f64,
+12 } 
 ```
 
 The algorithm for shape extraction works by first finding at a leaf in the quadtree. The leaf is then removed from the quadtree and the four edges around the leaf's region are pushed onto a stack called `edges`.
@@ -128,3 +128,38 @@ After the oulines have been removed from the quadtree I run the shape extraction
 ![shapes.good](images/shapes.good.png)
 
 As you can see, each shape is extracted with little error. There is however an issue. The gap between shapes is too large, we'll address this issue later.
+
+## Perimeter (src/perimeter.rs)
+
+Now we have an array of shapes which are descibed as an array of leafs. From the leafs of a shape we want to build an array of points that describe a path around the polygon shape. This was a fun algorithm to develop. After a few different ideas on paper and code I came up with the following.
+
+First I rasterize the shape to its own frame buffer with a padding of one pixel. I then scan the rows of the frame buffer till I find a filled pixel. The algorithm starts with the cursor at the position the first filled pixel was found.
+
+I then do the following until the cursor is moved to the first cursor's position.
+
+I populate an array called circle with the 8 pixels that neighbor the cursor.
+
+```
+13 const CIRCLE_X:[i64; 8] = [-1, 0, 1, 1, 1, 0, -1, -1];
+14 const CIRCLE_Y:[i64; 8] = [-1, -1, -1, 0, 1, 1, 1, 0];
+
+59         for i in 0..8 {
+60             circle[i] = image.data[((cx + CIRCLE_X[i]) + (cy + CIRCLE_Y[i]) * w) as usize];
+61         }  
+```
+
+The indexes for the circle are mapped as
+
+```
+0 | 1 | 2
+7 | X | 3
+6 | 5 | 4
+```
+
+Then starting at an index on the circle I know is outside the of the polygon I scan clockwise through the circle until I hit a shadded pixel. This shadded pixel becomes the new cursor position. By moving around the polygon I can always know the point on the next cursor's circle that is outside of the polygon. The index on the circle is looked up in `CIRCLE_B` with the index the shadded pixel was found.
+
+```
+15 const CIRCLE_B:[i64; 8] = [7, 7, 1, 1, 3, 3, 5, 5];
+```
+
+We know that circle index `7` is outside of the polygon for the first pixel because we found it by search from left to right where the image had a one pixel padding. This algorithm goes around the perimeter of shape in a binary image in a clockwise fashion and collects all the points along the way.
