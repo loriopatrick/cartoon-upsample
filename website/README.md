@@ -24,7 +24,7 @@ To calculate the difference between pixels I took into account color perception.
 167 }
 ```
 
-Through experimentation I modified my variance calculation to raise the risidual error to the third power.
+Through experimentation I modified my variance calculation to raise the residual error to the third power.
 
 ```
  80     for y in yi..yf {
@@ -122,3 +122,9 @@ In the debug render the outline of the shapes are rendered with thick black line
 In the first step we collect all the shapes where the area of the leaf is 1 pixel. Here is a debug render of these shapes where each shape is given a random color.
 
 ![outline.shape](images/outline.shape.png)
+
+After the oulines have been removed from the quadtree I run the shape extraction algorithm that grows based on color. The shapes in the second extraction are shown in the following debug render.
+
+![shapes.good](images/shapes.good.png)
+
+As you can see, each shape is extracted with little error. There is however an issue. The gap between shapes is too large, we'll address this issue later.
