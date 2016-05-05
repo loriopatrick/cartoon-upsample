@@ -72,19 +72,19 @@ fn main() {
         points = path_processing::simplify(points, 10.0);
         //path_processing::smooth(&mut points);
         write!(&mut file, "<path d=\"M{} {} ", points[0].x, points[0].y).unwrap();
-        for item in &points {
-            write!(&mut file, "L{} {} ", item.x, item.y).unwrap();
-        }
-
-        //let items = (points.len() - 1) / 3;
-        //for i in 0..items {
-        //    let idx = i * 3;
-        //    write!(&mut file, "C {} {}, {} {}, {} {}",
-        //           points[idx].x, points[idx].y,
-        //           points[idx + 1].x, points[idx + 1].y,
-        //           points[idx + 2].x, points[idx + 2].y
-        //   ).unwrap();
+        //for item in &points {
+        //    write!(&mut file, "L{} {} ", item.x, item.y).unwrap();
         //}
+
+        let items = (points.len() - 1) / 3;
+        for i in 0..items {
+            let idx = i * 3;
+            write!(&mut file, "C {} {}, {} {}, {} {}",
+                   points[idx].x, points[idx].y,
+                   points[idx + 1].x, points[idx + 1].y,
+                   points[idx + 2].x, points[idx + 2].y
+           ).unwrap();
+        }
         write!(&mut file, "Z\" stroke=\"rgb({},{},{})\" fill=\"rgb({}, {}, {})\"/>\n", shape.color[0], shape.color[1], shape.color[2], shape.color[0], shape.color[1], shape.color[2]).unwrap();
     }
     write!(&mut file, "</g>\n").unwrap();

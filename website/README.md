@@ -184,3 +184,14 @@ The first thing I do is apply a weighted average to the points on the path using
 The second thing I do is simplify the points along the path using the Ramer-Douglas-Peucker algorithm. Here is a render after processing the path.
 
 ![smooth1](images/smooth1.png)
+
+It looks better but there are still a few rough edges. Before addressing the outline width here is my final image. For this render I made every third point on the path a control point for a bezier curve.
+
+![final.bad](images/final.bad.png)
+
+
+## Addressing outline width
+
+I started work on a few different techniques, however they did not pan out in time for the project's due date. I addressed this issue with an inefficient patch where I upscale the image to 4096x4096 using a Cubic Filter before processing. By doing this the outline regions are relatively smaller. Here is the final render when doing this preprocessing.
+
+
