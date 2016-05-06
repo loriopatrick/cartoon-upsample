@@ -26,10 +26,10 @@ fn main() {
     println!("Processing {} to {}", input, output);
 
     let src = image::open(&Path::new(input)).unwrap().to_rgb();
-    let im = image::imageops::resize(&src, 512, 512, image::FilterType::CatmullRom);
+    let im = image::imageops::resize(&src, 2048, 2048, image::FilterType::CatmullRom);
     println!("- preprocessed image");
 
-    let tree = QuadTree::build(&im, 400.0);
+    let tree = QuadTree::build(&im, 150.0);
     println!("- built tree");
 
     //let redraw = debug_render::render_quadtree(&tree);
@@ -61,21 +61,17 @@ fn main() {
     let mut file = File::create(output).unwrap();
 
     write!(&mut file, "<svg height=\"{}\" width=\"{}\">\n", width, height).unwrap();
-    write!(&mut file, "<g stroke-width=\"0\">\n").unwrap();
+    write!(&mut file, "<g stroke-width=\"10\">\n").unwrap();
     for shape in &shapes {
-        if shape.area < 10.0 {
+        if shape.area < 200.0 {
             continue;
         }
         im_buf1.clear();
         let mut points = perimeter::extract_perimeter(&shape, &mut im_buf1);
         path_processing::smooth(&mut points);
         points = path_processing::simplify(points, 10.0);
-        //path_processing::smooth(&mut points);
+        path_processing::smooth(&mut points);
         write!(&mut file, "<path d=\"M{} {} ", points[0].x, points[0].y).unwrap();
-        //for item in &points {
-        //    write!(&mut file, "L{} {} ", item.x, item.y).unwrap();
-        //}
-
         let items = (points.len() - 1) / 3;
         for i in 0..items {
             let idx = i * 3;

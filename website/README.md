@@ -192,6 +192,6 @@ It looks better but there are still a few rough edges. Before addressing the out
 
 ## Addressing outline width
 
-I started work on a few different techniques, however they did not pan out in time for the project's due date. I addressed this issue with an inefficient patch where I upscale the image to 4096x4096 using a Cubic Filter before processing. By doing this the outline regions are relatively smaller. Here is the final render when doing this preprocessing.
+I started work on a few different techniques, however they did not pan out in time for the project's due date. I addressed this issue with an inefficient patch where I upscale the image to 2048x2048 using a Cubic Filter before processing. By doing this the outline regions are relatively smaller. Here is the final render when doing this preprocessing.
 
-
+![final](images/final.png)
