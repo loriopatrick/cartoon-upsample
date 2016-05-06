@@ -201,3 +201,8 @@ I started work on a few different techniques, however they did not pan out in ti
 By tunning the parameters you can get some cool effects
 
 ![fun](web_images/fun.png)
+
+## Videos
+
+[Vid1](https://www.youtube.com/watch?v=guOx0l7ZOtE)
+[Vid2](https://www.youtube.com/watch?v=Gzp4JCEnUOU)
