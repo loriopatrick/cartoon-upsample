@@ -4,7 +4,7 @@ I set out to develop a system that upscales frames from cartoon videos. Bilinear
 
 To illustrating the system I'm going to walk through the process with a frame from Futurama.
 
-![future](images/future.png)
+![future](web_images/future.png)
 
 
 ## Quadtree (src/quadtree.rs)
@@ -39,11 +39,11 @@ Through experimentation I modified my variance calculation to raise the residual
 
 Here is a debug render where the outline of each leaf is rendered in black over of the original image.
 
-![lines](images/lines.png)
+![lines](web_images/lines.png)
 
 Here is a debug render where each leaf of the quadtree is rendered as a solid color.
 
-![redraw](images/redraw.png)
+![redraw](web_images/redraw.png)
 
 
 ## Shape Extractor (src/shape.rs)
@@ -111,21 +111,21 @@ color_diff(cc, option.color) < 80.0 || color_diff(src_color, option.color) < 5.0
 
 The best results I could derive from this were disapointing. This is a debug render where each shape is given a random color.
 
-![shapes](images/shapes.png)
+![shapes](web_images/shapes.png)
 
 The image has a lot of noise and some errors. Notice how the hair in the back left bleeds into the the background wall. After trying this problem with many different tactics I came up with a clever idea while looking at the debug render of the quadtree.
 
-![lines](images/lines.png)
+![lines](web_images/lines.png)
 
 In the debug render the outline of the shapes are rendered with thick black lines. These black lines are the borders of the quadtree's leafs. They form a thick black line because the variance in the outline regions is so high the quadtree has split till the leafs are the size of a single pixel. The idea is to use the algorithm above to construct a shape that grows based on the neighbor's leaf size rather than color.
 
 In the first step we collect all the shapes where the area of the leaf is 1 pixel. Here is a debug render of these shapes where each shape is given a random color.
 
-![outline.shape](images/outline.shape.png)
+![outline.shape](web_images/outline.shape.png)
 
 After the oulines have been removed from the quadtree I run the shape extraction algorithm that grows based on color. The shapes in the second extraction are shown in the following debug render.
 
-![shapes.good](images/shapes.good.png)
+![shapes.good](web_images/shapes.good.png)
 
 As you can see, each shape is extracted with little error. There is however an issue. The gap between shapes is too large, we'll address this issue later.
 
@@ -169,7 +169,7 @@ We know that circle index `7` is outside of the polygon for the first pixel beca
 
 We now have the a perimeter that describes each of our shapes. Here is a render drawing each polygon with the shape's average color.
 
-![sharp](images/sharp.png)
+![sharp](web_images/sharp.png)
 
 This looks pretty good. With a little processing we can smooth out the shape's edges and be on our way.
 
@@ -183,15 +183,21 @@ The first thing I do is apply a weighted average to the points on the path using
 
 The second thing I do is simplify the points along the path using the Ramer-Douglas-Peucker algorithm. Here is a render after processing the path.
 
-![smooth1](images/smooth1.png)
+![smooth1](web_images/smooth1.png)
 
 It looks better but there are still a few rough edges. Before addressing the outline width here is my final image. For this render I made every third point on the path a control point for a bezier curve.
 
-![final.bad](images/final.bad.png)
+![final.bad](web_images/final.bad.png)
 
 
 ## Addressing outline width
 
 I started work on a few different techniques, however they did not pan out in time for the project's due date. I addressed this issue with an inefficient patch where I upscale the image to 2048x2048 using a Cubic Filter before processing. By doing this the outline regions are relatively smaller. Here is the final render when doing this preprocessing.
 
-![final](images/final.png)
+![final](web_images/final.png)
+
+## Other
+
+By tunning the parameters you can get some cool effects
+
+![fun](web_images/fun.png)
